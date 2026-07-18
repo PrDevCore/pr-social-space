@@ -21,7 +21,9 @@ export default async function DashboardPage({
   } catch (err) {
     console.error(err);
     loadError =
-      "Couldn't reach Post for Me. Check POSTFORME_API_KEY in your environment.";
+      err instanceof Error && err.message.includes("POSTFORME_API_KEY")
+        ? "Post for Me is not configured. Set POSTFORME_API_KEY in your environment."
+        : "Couldn't reach Post for Me. Check POSTFORME_API_KEY in your environment.";
   }
 
   const justConnected = searchParams.isSuccess === "true";

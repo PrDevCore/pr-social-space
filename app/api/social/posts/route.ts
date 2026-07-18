@@ -66,6 +66,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to create post" }, { status: 502 });
+    const errorMessage =
+      err instanceof Error && err.message.includes("POSTFORME_API_KEY")
+        ? err.message
+        : "Failed to create post";
+
+    return NextResponse.json({ error: errorMessage }, { status: 502 });
   }
 }

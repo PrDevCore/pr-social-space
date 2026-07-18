@@ -14,9 +14,11 @@ export async function GET() {
     return NextResponse.json({ accounts: data });
   } catch (err) {
     console.error(err);
-    return NextResponse.json(
-      { error: "Failed to load accounts" },
-      { status: 502 }
-    );
+    const errorMessage =
+      err instanceof Error && err.message.includes("POSTFORME_API_KEY")
+        ? err.message
+        : "Failed to load accounts";
+
+    return NextResponse.json({ error: errorMessage }, { status: 502 });
   }
 }

@@ -42,9 +42,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ url });
   } catch (err) {
     console.error(err);
-    return NextResponse.json(
-      { error: "Failed to create auth URL" },
-      { status: 502 }
-    );
+    const errorMessage =
+      err instanceof Error && err.message.includes("POSTFORME_API_KEY")
+        ? err.message
+        : "Failed to create auth URL";
+
+    return NextResponse.json({ error: errorMessage }, { status: 502 });
   }
 }

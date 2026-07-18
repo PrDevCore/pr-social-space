@@ -16,7 +16,7 @@ const API_KEY = process.env.POSTFORME_API_KEY;
 function assertConfigured() {
   if (!API_KEY) {
     throw new Error(
-      "POSTFORME_API_KEY is not set. Add it to .env.local (server-side only)."
+      "POSTFORME_API_KEY is not set. Add it to .env.local or your deployment environment."
     );
   }
 }
