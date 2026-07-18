@@ -1,4 +1,5 @@
 const DEFAULT_TEST_PUBLISHABLE_KEY = "pk_test_YmFsYW5jZWQtbW9sZS05MS5jbGVyay5hY2NvdW50cy5kZXYk";
+const FALLBACK_CLERK_JS_URL = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js";
 
 function normalize(value: string | undefined) {
   return typeof value === "string" ? value.trim() : "";
@@ -22,7 +23,7 @@ export function resolveClerkConfig(env = process.env) {
 
   const resolvedClerkJsUrl = isLikelyClerkScriptUrl(explicitClerkJsUrl)
     ? explicitClerkJsUrl
-    : undefined;
+    : FALLBACK_CLERK_JS_URL;
 
   return {
     publishableKey: resolvedPublishableKey,
