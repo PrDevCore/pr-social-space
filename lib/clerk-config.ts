@@ -13,6 +13,13 @@ function isLikelyClerkScriptUrl(value: string) {
   return /^https:\/\/[^\s]+\/npm\/@clerk\/clerk-js@[^\s]+\/dist\/clerk(?:\.[^\s]+)?browser\.js$/i.test(value);
 }
 
+function resolveRedirectUrl(env: Record<string, string | undefined>, preferredVar: string, legacyVar: string, fallback = "/dashboard") {
+  const preferred = normalize(env[preferredVar]);
+  const legacy = normalize(env[legacyVar]);
+
+  return preferred || legacy || fallback;
+}
+
 export function resolveClerkConfig(env = process.env) {
   const publishableKey = normalize(env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
   const explicitClerkJsUrl = normalize(env.NEXT_PUBLIC_CLERK_JS_URL);
@@ -28,5 +35,25 @@ export function resolveClerkConfig(env = process.env) {
   return {
     publishableKey: resolvedPublishableKey,
     clerkJsUrl: resolvedClerkJsUrl,
+    signInFallbackRedirectUrl: resolveRedirectUrl(
+      env,
+      "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL",
+      "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL"
+    ),
+    signInForceRedirectUrl: resolveRedirectUrl(
+      env,
+      "NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL",
+      "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL"
+    ),
+    signUpFallbackRedirectUrl: resolveRedirectUrl(
+      env,
+      "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL",
+      "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL"
+    ),
+    signUpForceRedirectUrl: resolveRedirectUrl(
+      env,
+      "NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL",
+      "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL"
+    ),
   };
 }
