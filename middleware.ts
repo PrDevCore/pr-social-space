@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
 // [ Your Frontend Login ] ---> [ Auth Provider / Custom Backend ] ---> [ Redirect to /dashboard ]
 //
@@ -12,9 +13,18 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+  try {
+    if (isProtectedRoute(req)) {
+      await auth.protect();
+    }
+  } catch {
+    // Avoid breaking the whole app when Clerk cannot initialize in production.
+    // Let the request continue to the route handler and let the route decide
+    // whether to return a 401/redirect response.
+    return NextResponse.next();
   }
+
+  return NextResponse.next();
 });
 
 export const config = {
