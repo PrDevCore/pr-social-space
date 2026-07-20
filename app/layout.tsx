@@ -3,7 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { resolveClerkConfig, clearDeprecatedClerkRedirectEnv } from "@/lib/clerk-config";
 import "./globals.css";
 
-const { publishableKey, clerkJsUrl } = resolveClerkConfig();
+const { publishableKey } = resolveClerkConfig();
 
 export const metadata: Metadata = {
   title: "Social Hub",
@@ -26,7 +26,7 @@ export default function RootLayout({
   );
 
   return (
-    <ClerkProvider publishableKey={publishableKey} clerkJSUrl={clerkJsUrl}>
+    <ClerkProvider publishableKey={publishableKey}>
       {content}
     </ClerkProvider>
   );
