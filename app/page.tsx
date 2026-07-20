@@ -5,8 +5,13 @@ import { redirect } from "next/navigation";
 // [ Your Frontend Login ]
 // If the user already has a Clerk session, skip straight to /dashboard.
 export default async function Home() {
-  const { userId } = await auth();
-  if (userId) redirect("/dashboard");
+  try {
+    const { userId } = await auth();
+    if (userId) redirect("/dashboard");
+  } catch {
+    // In production, Clerk can fail to initialize in some environments.
+    // Fall back to the public landing page instead of throwing a 500.
+  }
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 text-center">

@@ -18,7 +18,7 @@ function resolveRedirectUrl(env: Record<string, string | undefined>, preferredVa
   const preferred = normalize(env[preferredVar]);
 
   if (preferred) {
-    return preferred;
+    return preferred.startsWith("http") ? preferred : preferred;
   }
 
   const appUrl = normalize(env.APP_URL);
@@ -54,24 +54,17 @@ export function resolveClerkConfig(env = process.env) {
     ? explicitClerkJsUrl
     : FALLBACK_CLERK_JS_URL;
 
+  const dashboardPath = normalize(env.NEXT_PUBLIC_APP_DASHBOARD_PATH) || DEFAULT_DASHBOARD_PATH;
+  const dashboardRedirect = dashboardPath.startsWith("http")
+    ? dashboardPath
+    : resolveRedirectUrl(env, "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL", dashboardPath);
+
   return {
     publishableKey: resolvedPublishableKey,
     clerkJsUrl: resolvedClerkJsUrl,
-    signInFallbackRedirectUrl: resolveRedirectUrl(
-      env,
-      "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL"
-    ),
-    signInForceRedirectUrl: resolveRedirectUrl(
-      env,
-      "NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL"
-    ),
-    signUpFallbackRedirectUrl: resolveRedirectUrl(
-      env,
-      "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL"
-    ),
-    signUpForceRedirectUrl: resolveRedirectUrl(
-      env,
-      "NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL"
-    ),
+    signInFallbackRedirectUrl: dashboardRedirect,
+    signInForceRedirectUrl: dashboardRedirect,
+    signUpFallbackRedirectUrl: dashboardRedirect,
+    signUpForceRedirectUrl: dashboardRedirect,
   };
 }

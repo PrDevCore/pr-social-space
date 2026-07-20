@@ -27,6 +27,7 @@ export default function AccountCard({
     } catch (err) {
       console.error(err);
       alert("Couldn't disconnect that account.");
+    } finally {
       setBusy(false);
     }
   }

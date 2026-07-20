@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 import { listSocialAccounts, SocialAccount } from "@/lib/postforme";
 import SocialDashboard from "@/components/SocialDashboard";
 
@@ -8,10 +9,12 @@ import SocialDashboard from "@/components/SocialDashboard";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { isSuccess?: string; provider?: string; error?: string };
+  searchParams: { isSuccess?: string | string[]; provider?: string | string[]; error?: string | string[] };
 }) {
   const { userId } = await auth();
-  if (!userId) return null;
+  if (!userId) {
+    redirect("/sign-in");
+  }
 
   let accounts: SocialAccount[] = [];
   let loadError: string | null = null;
@@ -26,8 +29,13 @@ export default async function DashboardPage({
         : "Couldn't reach Post for Me. Check POSTFORME_API_KEY in your environment.";
   }
 
-  const justConnected = searchParams.isSuccess === "true";
-  const connectionFailed = searchParams.isSuccess === "false";
+  const getSingleValue = (value: string | string[] | undefined) =>
+    typeof value === "string" ? value : undefined;
+
+  const justConnected = getSingleValue(searchParams.isSuccess) === "true";
+  const connectionFailed = getSingleValue(searchParams.isSuccess) === "false";
+  const provider = getSingleValue(searchParams.provider);
+  const error = getSingleValue(searchParams.error);
 
   return (
     <div className="space-y-6">
@@ -40,12 +48,12 @@ export default async function DashboardPage({
 
       {justConnected && (
         <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          {searchParams.provider ?? "Account"} connected successfully.
+          {provider ?? "Account"} connected successfully.
         </div>
       )}
       {connectionFailed && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          Connection failed{searchParams.error ? `: ${searchParams.error}` : "."}
+          Connection failed{error ? `: ${error}` : "."}
         </div>
       )}
       {loadError && (
