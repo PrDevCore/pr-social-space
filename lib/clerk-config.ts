@@ -1,5 +1,6 @@
 const DEFAULT_TEST_PUBLISHABLE_KEY = "pk_test_YmFsYW5jZWQtbW9sZS05MS5jbGVyay5hY2NvdW50cy5kZXYk";
 const FALLBACK_CLERK_JS_URL = "https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js";
+const DEFAULT_DASHBOARD_PATH = "/dashboard";
 
 function normalize(value: string | undefined) {
   return typeof value === "string" ? value.trim() : "";
@@ -13,11 +14,32 @@ function isLikelyClerkScriptUrl(value: string) {
   return /^https:\/\/[^\s]+\/npm\/@clerk\/clerk-js@[^\s]+\/dist\/clerk(?:\.[^\s]+)?browser\.js$/i.test(value);
 }
 
-function resolveRedirectUrl(env: Record<string, string | undefined>, preferredVar: string, legacyVar: string, fallback = "/dashboard") {
+function resolveRedirectUrl(env: Record<string, string | undefined>, preferredVar: string, fallback = DEFAULT_DASHBOARD_PATH) {
   const preferred = normalize(env[preferredVar]);
-  const legacy = normalize(env[legacyVar]);
 
-  return preferred || legacy || fallback;
+  if (preferred) {
+    return preferred;
+  }
+
+  const appUrl = normalize(env.APP_URL);
+  const vercelUrl = normalize(env.VERCEL_URL);
+  const baseUrl = appUrl || (vercelUrl ? `https://${vercelUrl}` : "");
+
+  if (!baseUrl) {
+    return fallback;
+  }
+
+  try {
+    return new URL(fallback, baseUrl).toString();
+  } catch {
+    return fallback;
+  }
+}
+
+export function clearDeprecatedClerkRedirectEnv() {
+  delete process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL;
+  delete process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL;
+  delete process.env.NEXT_PUBLIC_CLERK_REDIRECT_URL;
 }
 
 export function resolveClerkConfig(env = process.env) {
@@ -37,23 +59,19 @@ export function resolveClerkConfig(env = process.env) {
     clerkJsUrl: resolvedClerkJsUrl,
     signInFallbackRedirectUrl: resolveRedirectUrl(
       env,
-      "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL",
-      "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL"
+      "NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL"
     ),
     signInForceRedirectUrl: resolveRedirectUrl(
       env,
-      "NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL",
-      "NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL"
+      "NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL"
     ),
     signUpFallbackRedirectUrl: resolveRedirectUrl(
       env,
-      "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL",
-      "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL"
+      "NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL"
     ),
     signUpForceRedirectUrl: resolveRedirectUrl(
       env,
-      "NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL",
-      "NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL"
+      "NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL"
     ),
   };
 }

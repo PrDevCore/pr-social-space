@@ -1,7 +1,15 @@
 import { SignIn } from "@clerk/nextjs";
-import { resolveClerkConfig } from "@/lib/clerk-config";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import { resolveClerkConfig, clearDeprecatedClerkRedirectEnv } from "@/lib/clerk-config";
 
-export default function SignInPage() {
+export default async function SignInPage() {
+  const { userId } = await auth();
+  if (userId) {
+    redirect("/dashboard");
+  }
+
+  clearDeprecatedClerkRedirectEnv();
   const { signInFallbackRedirectUrl, signInForceRedirectUrl } = resolveClerkConfig();
 
   return (

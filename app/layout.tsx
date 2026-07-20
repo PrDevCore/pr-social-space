@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { resolveClerkConfig } from "@/lib/clerk-config";
+import { resolveClerkConfig, clearDeprecatedClerkRedirectEnv } from "@/lib/clerk-config";
 import "./globals.css";
 
 const { publishableKey, clerkJsUrl } = resolveClerkConfig();
@@ -15,6 +15,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  clearDeprecatedClerkRedirectEnv();
+
   const content = (
     <html lang="en">
       <body className="min-h-screen font-sans antialiased">
