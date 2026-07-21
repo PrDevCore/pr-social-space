@@ -50,9 +50,13 @@ export function resolveClerkConfig(env = process.env) {
     ? publishableKey
     : DEFAULT_TEST_PUBLISHABLE_KEY;
 
+  // Only use an explicit Clerk JS URL when provided and looking like a Clerk script URL.
+  // Avoid forcing the fallback CDN script in development environments (for example
+  // when running behind a proxy like GitHub.dev) to prevent forwarded Server Actions
+  // requests that fail origin checks.
   const resolvedClerkJsUrl = isLikelyClerkScriptUrl(explicitClerkJsUrl)
     ? explicitClerkJsUrl
-    : FALLBACK_CLERK_JS_URL;
+    : undefined;
 
   const dashboardPath = normalize(env.NEXT_PUBLIC_APP_DASHBOARD_PATH) || DEFAULT_DASHBOARD_PATH;
   const dashboardRedirect = dashboardPath.startsWith("http")
