@@ -2,21 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { recordAccountConnected } from "@/lib/store";
 
-/**
- * Server-to-server webhook from Post for Me. Configure this URL
- * (https://yourdomain.com/api/webhooks/postforme) in the Post for Me
- * dashboard and subscribe to `social.account.created` at minimum.
- *
- * This route is intentionally excluded from Clerk auth in middleware.ts —
- * Post for Me calls it directly, there's no logged-in browser session.
- * Instead we verify the payload signature. Check the exact header name /
- * scheme Post for Me shows you in Project Settings > Webhooks and adjust
- * `verifySignature` below to match — this is a standard HMAC-SHA256
- * implementation as a safe default.
- */
 function verifySignature(rawBody: string, signatureHeader: string | null) {
   const secret = process.env.POSTFORME_WEBHOOK_SECRET;
-  if (!secret) return true; // no secret configured: skip verification (dev only)
+  if (!secret) return true;
   if (!signatureHeader) return false;
 
   const expected = crypto
@@ -49,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "social.account.created") {
     await recordAccountConnected({
-      userId: event.data.external_id, // this is the Clerk userId we passed as external_id
+      userId: event.data.external_id,
       accountId: event.data.id,
       platform: event.data.platform,
     });

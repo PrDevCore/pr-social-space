@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth0 } from "@/lib/auth0";
 import { listSocialAccounts } from "@/lib/postforme";
 
-// GET /api/social/accounts — accounts belonging to the current Clerk user.
 export async function GET() {
-  const { userId } = await auth();
+  const session = await auth0.getSession();
+  const userId = session?.user?.sub;
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -1,17 +1,9 @@
-import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
+import { auth0 } from "@/lib/auth0";
 import { redirect } from "next/navigation";
 
-// [ Your Frontend Login ]
-// If the user already has a Clerk session, skip straight to /dashboard.
 export default async function Home() {
-  try {
-    const { userId } = await auth();
-    if (userId) redirect("/dashboard");
-  } catch {
-    // In production, Clerk can fail to initialize in some environments.
-    // Fall back to the public landing page instead of throwing a 500.
-  }
+  const session = await auth0.getSession();
+  if (session?.user) redirect("/dashboard");
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 text-center">
@@ -26,12 +18,12 @@ export default async function Home() {
         Me, then publish everywhere from a single composer.
       </p>
       <div className="mt-8 flex gap-3">
-        <Link href="/sign-in" className="btn-primary">
+        <a href="/auth/login" className="btn-primary">
           Sign in
-        </Link>
-        <Link href="/sign-up" className="btn-secondary">
+        </a>
+        <a href="/auth/login?screen_hint=signup" className="btn-secondary">
           Create account
-        </Link>
+        </a>
       </div>
     </main>
   );

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth0 } from "@/lib/auth0";
 import { createSocialPost, listSocialAccounts } from "@/lib/postforme";
 import { listPostsForUser, recordPost } from "@/lib/store";
 
-// GET /api/social/posts — this user's post history from our own backend.
 export async function GET() {
-  const { userId } = await auth();
+  const session = await auth0.getSession();
+  const userId = session?.user?.sub;
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -14,9 +14,9 @@ export async function GET() {
   return NextResponse.json({ posts });
 }
 
-// POST /api/social/posts { caption, socialAccountIds, mediaUrls?, scheduledAt? }
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
+  const session = await auth0.getSession();
+  const userId = session?.user?.sub;
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // Ownership check: only allow posting to accounts this user connected.
     const { data: ownedAccounts } = await listSocialAccounts(userId);
     const ownedIds = new Set(ownedAccounts.map((a) => a.id));
     const unauthorized = body.socialAccountIds.filter((id) => !ownedIds.has(id));

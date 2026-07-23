@@ -2,22 +2,11 @@ import "server-only";
 import { promises as fs } from "fs";
 import path from "path";
 
-/**
- * Minimal file-backed persistence standing in for your "Custom Backend"
- * database. It stores per-user post history and account nicknames that
- * live in YOUR system (Post for Me remains the source of truth for OAuth
- * tokens and account status).
- *
- * Swap this module for Prisma + Postgres/MySQL in production — every
- * function signature below is what a real ORM layer would expose, so
- * nothing else in the app needs to change.
- */
-
 const DATA_FILE = path.join(process.cwd(), "data", "db.json");
 
 interface PostRecord {
-  id: string; // Post for Me social_post id
-  userId: string; // Clerk userId
+  id: string;
+  userId: string;
   caption: string;
   socialAccountIds: string[];
   status: string;
@@ -59,7 +48,6 @@ export async function listPostsForUser(userId: string) {
   return db.posts.filter((p) => p.userId === userId);
 }
 
-/** Called from the Post for Me webhook when social.account.created fires. */
 export async function recordAccountConnected(entry: {
   userId: string;
   accountId: string;

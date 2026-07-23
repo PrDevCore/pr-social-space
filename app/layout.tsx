@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
-import { resolveClerkConfig, clearDeprecatedClerkRedirectEnv } from "@/lib/clerk-config";
+import { Auth0Provider } from "@auth0/nextjs-auth0/client";
 import "./globals.css";
-
-const { publishableKey } = resolveClerkConfig();
 
 export const metadata: Metadata = {
   title: "Social Hub",
@@ -15,19 +12,11 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  clearDeprecatedClerkRedirectEnv();
-
-  const content = (
+  return (
     <html lang="en">
       <body className="min-h-screen font-sans antialiased">
-        {children}
+        <Auth0Provider>{children}</Auth0Provider>
       </body>
     </html>
-  );
-
-  return (
-    <ClerkProvider publishableKey={publishableKey}>
-      {content}
-    </ClerkProvider>
   );
 }

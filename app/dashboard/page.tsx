@@ -1,19 +1,17 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth0 } from "@/lib/auth0";
 import { redirect } from "next/navigation";
 import { listSocialAccounts, SocialAccount } from "@/lib/postforme";
 import SocialDashboard from "@/components/SocialDashboard";
 
-// [ Redirect to /dashboard ]
-// middleware.ts already guarantees userId exists here (route is protected),
-// but we double-check for type-safety / defense in depth.
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: { isSuccess?: string | string[]; provider?: string | string[]; error?: string | string[] };
 }) {
-  const { userId } = await auth();
+  const session = await auth0.getSession();
+  const userId = session?.user?.sub;
   if (!userId) {
-    redirect("/sign-in");
+    redirect("/auth/login");
   }
 
   let accounts: SocialAccount[] = [];

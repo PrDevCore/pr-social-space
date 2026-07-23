@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth0 } from "@/lib/auth0";
 import { disconnectSocialAccount, listSocialAccounts } from "@/lib/postforme";
 
-// POST /api/social/disconnect { accountId }
-// We never trust an accountId from the client blindly — we re-fetch the
-// user's own accounts from Post for Me (scoped by external_id) and only
-// disconnect if it actually belongs to them.
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
+  const session = await auth0.getSession();
+  const userId = session?.user?.sub;
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
