@@ -1,0 +1,6 @@
+{
+  "name": "SocialSpace",
+  "description": "Cross-platform social media publishing and management dashboard powered by Post For Me API.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
