@@ -18,10 +18,10 @@ export default async function Home() {
         Me, then publish everywhere from a single composer.
       </p>
       <div className="mt-8 flex gap-3">
-        <a href="/auth/login" className="btn-primary">
+        <a href="/auth/login?returnTo=/dashboard" className="btn-primary">
           Sign in
         </a>
-        <a href="/auth/login?screen_hint=signup" className="btn-secondary">
+        <a href="/auth/login?screen_hint=signup&returnTo=/dashboard" className="btn-secondary">
           Create account
         </a>
       </div>
