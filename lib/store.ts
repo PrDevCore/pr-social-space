@@ -1,74 +1,162 @@
 import "server-only";
-import { promises as fs } from "fs";
-import path from "path";
+import { randomUUID } from "crypto";
+import { getDb } from "@/lib/firebase";
 
 /**
- * Minimal file-backed persistence standing in for your "Custom Backend"
- * database. It stores per-user post history and account nicknames that
- * live in YOUR system (Post for Me remains the source of truth for OAuth
- * tokens and account status).
+ * Firebase Firestore persistence layer.
  *
- * Swap this module for Prisma + Postgres/MySQL in production — every
- * function signature below is what a real ORM layer would expose, so
- * nothing else in the app needs to change.
+ * Every exported function keeps the same signature the JSON-file store had,
+ * so no route or component changes when swapping databases. Collection names
+ * mirror the old DbShape:
+ *
+ *   users[userId]                -> UserRecord (password scrypt hash)
+ *   sessions[token]              -> SessionRecord
+ *   posts[postId]                -> PostRecord
+ *   connectedAccountEvents[auto] -> account.connected webhook events
+ *   profiles[userId]             -> userId -> Zernio profileId mapping
  */
 
-const DATA_FILE = path.join(process.cwd(), "data", "db.json");
+export const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+/* ----------------------------- Collections ------------------------------ */
+
+const db = () => getDb();
+const users = () => db().collection("users");
+const sessions = () => db().collection("sessions");
+const posts = () => db().collection("posts");
+const events = () => db().collection("connectedAccountEvents");
+const profiles = () => db().collection("profiles");
+
+interface UserRecord {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  createdAt: string;
+}
+
+interface SessionRecord {
+  token: string;
+  userId: string;
+  expiresAt: string;
+}
 
 interface PostRecord {
-  id: string; // Post for Me social_post id
-  userId: string; // Clerk userId
+  id: string; // Zernio post id
+  userId: string; // app userId
   caption: string;
   socialAccountIds: string[];
   status: string;
   createdAt: string;
 }
 
-interface DbShape {
-  posts: PostRecord[];
-  connectedAccountEvents: Array<{
-    userId: string;
-    accountId: string;
-    platform: string;
-    receivedAt: string;
-  }>;
+/* --------------------------------- Users -------------------------------- */
+
+export interface PublicUser {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: string;
 }
 
-async function readDb(): Promise<DbShape> {
-  try {
-    const raw = await fs.readFile(DATA_FILE, "utf-8");
-    return JSON.parse(raw);
-  } catch {
-    return { posts: [], connectedAccountEvents: [] };
-  }
+function toPublicUser(u: UserRecord): PublicUser {
+  return { id: u.id, name: u.name, email: u.email, createdAt: u.createdAt };
 }
 
-async function writeDb(db: DbShape) {
-  await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(db, null, 2));
+export async function createUser(input: {
+  name: string;
+  email: string;
+  passwordHash: string;
+}): Promise<PublicUser> {
+  const user: UserRecord = {
+    id: `user_${randomUUID()}`,
+    name: input.name,
+    email: input.email,
+    passwordHash: input.passwordHash,
+    createdAt: new Date().toISOString(),
+  };
+  await users().doc(user.id).set(user);
+  return toPublicUser(user);
 }
+
+export async function findUserByEmail(
+  email: string
+): Promise<(PublicUser & { passwordHash: string }) | null> {
+  const snap = await users()
+    .where("email", "==", email.trim().toLowerCase())
+    .limit(1)
+    .get();
+  if (snap.empty) return null;
+  const doc = snap.docs[0].data() as UserRecord;
+  return { ...toPublicUser(doc), passwordHash: doc.passwordHash };
+}
+
+export async function getUserById(id: string): Promise<PublicUser | null> {
+  const snap = await users().doc(id).get();
+  if (!snap.exists) return null;
+  return toPublicUser(snap.data() as UserRecord);
+}
+
+/* ------------------------------- Sessions ------------------------------- */
+
+export async function createSession(userId: string, token: string) {
+  await sessions().doc(token).set({
+    token,
+    userId,
+    expiresAt: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
+  });
+}
+
+export async function getSession(
+  token: string
+): Promise<SessionRecord | null> {
+  const snap = await sessions().doc(token).get();
+  if (!snap.exists) return null;
+  const session = snap.data() as SessionRecord;
+  if (new Date(session.expiresAt).getTime() < Date.now()) return null;
+  return session;
+}
+
+export async function deleteSession(token: string) {
+  await sessions().doc(token).delete();
+}
+
+/* --------------------------------- Posts -------------------------------- */
 
 export async function recordPost(record: PostRecord) {
-  const db = await readDb();
-  db.posts.unshift(record);
-  await writeDb(db);
+  await posts().doc(record.id).set(record);
 }
 
-export async function listPostsForUser(userId: string) {
-  const db = await readDb();
-  return db.posts.filter((p) => p.userId === userId);
+export async function listPostsForUser(userId: string): Promise<PostRecord[]> {
+  // Sorted in memory so no composite Firestore index is required.
+  const snap = await posts().where("userId", "==", userId).get();
+  return snap.docs
+    .map((d) => d.data() as PostRecord)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-/** Called from the Post for Me webhook when social.account.created fires. */
+/* ----------------------------- Account events --------------------------- */
+
+/** Called from the Zernio webhook when account.connected fires. */
 export async function recordAccountConnected(entry: {
   userId: string;
   accountId: string;
   platform: string;
 }) {
-  const db = await readDb();
-  db.connectedAccountEvents.unshift({
+  await events().add({
     ...entry,
     receivedAt: new Date().toISOString(),
   });
-  await writeDb(db);
+}
+
+/* ----------------------------- Profile mapping -------------------------- */
+
+export async function getProfileForUser(userId: string): Promise<string | null> {
+  const snap = await profiles().doc(userId).get();
+  if (!snap.exists) return null;
+  return (snap.data() as { profileId: string }).profileId;
+}
+
+export async function setProfileForUser(userId: string, profileId: string) {
+  await profiles().doc(userId).set({ userId, profileId });
 }

@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { createSocialPost, listSocialAccounts } from "@/lib/postforme";
+import { getCurrentUser } from "@/lib/auth";
+import { createPost, ensureProfileForUser, listAccounts } from "@/lib/zernio";
 import { listPostsForUser, recordPost } from "@/lib/store";
 
 // GET /api/social/posts — this user's post history from our own backend.
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const posts = await listPostsForUser(userId);
+  const posts = await listPostsForUser(user.id);
   return NextResponse.json({ posts });
 }
 
 // POST /api/social/posts { caption, socialAccountIds, mediaUrls?, scheduledAt? }
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -36,10 +36,11 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const profileId = await ensureProfileForUser(user.id);
     // Ownership check: only allow posting to accounts this user connected.
-    const { data: ownedAccounts } = await listSocialAccounts(userId);
-    const ownedIds = new Set(ownedAccounts.map((a) => a.id));
-    const unauthorized = body.socialAccountIds.filter((id) => !ownedIds.has(id));
+    const ownedAccounts = await listAccounts(profileId);
+    const ownedById = new Map(ownedAccounts.map((a) => [a.id, a]));
+    const unauthorized = body.socialAccountIds.filter((id) => !ownedById.has(id));
     if (unauthorized.length) {
       return NextResponse.json(
         { error: `Not your accounts: ${unauthorized.join(", ")}` },
@@ -47,16 +48,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await createSocialPost({
-      caption: body.caption,
-      socialAccountIds: body.socialAccountIds,
+    const result = await createPost({
+      content: body.caption,
+      profileId,
+      targets: body.socialAccountIds.map((id) => ({
+        accountId: id,
+        platform: ownedById.get(id)!.platform,
+      })),
       mediaUrls: body.mediaUrls,
       scheduledAt: body.scheduledAt,
     });
 
     await recordPost({
       id: result.id,
-      userId,
+      userId: user.id,
       caption: body.caption,
       socialAccountIds: body.socialAccountIds,
       status: result.status,

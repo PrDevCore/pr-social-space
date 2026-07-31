@@ -1,0 +1,254 @@
+import "server-only";
+import { randomUUID } from "crypto";
+import { getProfileForUser, setProfileForUser } from "@/lib/store";
+
+/**
+ * Thin server-side client for the Zernio API.
+ * https://zernio.com/llms.txt | https://zernio.com/openapi.yaml
+ *
+ * This file is the ONLY place the ZERNIO_API_KEY is used. It must never be
+ * imported from a client component. All routes under app/api/social/*
+ * (our "custom backend") call through here on behalf of the signed-in
+ * user.
+ *
+ * Multi-user scoping: Zernio organises connected accounts into *profiles*.
+ * Each app user gets their own profile (named after their user id) so one
+ * Zernio API key can safely serve every tenant of the app. The
+ * userId <-> profileId mapping is cached in our own store (lib/store.ts).
+ */
+
+const API_BASE = process.env.ZERNIO_API_BASE ?? "https://zernio.com/api/v1";
+const API_KEY = process.env.ZERNIO_API_KEY;
+
+function assertConfigured() {
+  if (!API_KEY) {
+    throw new Error(
+      "ZERNIO_API_KEY is not set. Add it to .env.local (server-side only)."
+    );
+  }
+}
+
+async function zernioFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+  assertConfigured();
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${API_KEY}`,
+      "Content-Type": "application/json",
+      ...init.headers,
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(
+      `Zernio API error ${res.status} on ${path}: ${body || res.statusText}`
+    );
+  }
+
+  if (res.status === 204) return undefined as T;
+  return res.json() as Promise<T>;
+}
+
+export type SocialPlatform =
+  | "tiktok"
+  | "instagram"
+  | "facebook"
+  | "twitter"
+  | "linkedin"
+  | "youtube"
+  | "pinterest"
+  | "threads"
+  | "bluesky"
+  | "reddit";
+
+export interface SocialAccount {
+  id: string; // Zernio account id
+  platform: SocialPlatform;
+  username?: string;
+  display_name?: string;
+  avatar_url?: string;
+}
+
+/* ------------------------------- Profiles ------------------------------- */
+
+const PROFILE_DESCRIPTION_PREFIX = "Social Hub profile for user ";
+
+function profileNameForUser(userId: string) {
+  return `User ${userId.slice(0, 8)}`;
+}
+
+function profileDescriptionForUser(userId: string) {
+  return `${PROFILE_DESCRIPTION_PREFIX}${userId}`;
+}
+
+interface ZernioProfile {
+  _id: string;
+  name: string;
+  description?: string;
+}
+
+async function findProfileByDescription(
+  description: string
+): Promise<ZernioProfile | undefined> {
+  const { profiles } = await zernioFetch<{ profiles: ZernioProfile[] }>(
+    "/profiles"
+  );
+  return profiles.find((p) => p.description === description);
+}
+
+/**
+ * Resolve (creating if needed) the Zernio profile owned by this user.
+ * Used by every /api/social/* route to scope requests to the user.
+ */
+export async function ensureProfileForUser(userId: string): Promise<string> {
+  const cached = await getProfileForUser(userId);
+  if (cached) return cached;
+
+  const description = profileDescriptionForUser(userId);
+
+  // Recover a profile created by an earlier run (e.g. store was reset).
+  const existing = await findProfileByDescription(description);
+  if (existing) {
+    await setProfileForUser(userId, existing._id);
+    return existing._id;
+  }
+
+  const { profile } = await zernioFetch<{ profile: ZernioProfile }>(
+    "/profiles",
+    {
+      method: "POST",
+      headers: { "Idempotency-Key": `social-hub-profile-${userId}` },
+      body: JSON.stringify({
+        name: profileNameForUser(userId),
+        description,
+        color: "#ffeda0",
+      }),
+    }
+  );
+
+  await setProfileForUser(userId, profile._id);
+  return profile._id;
+}
+
+/**
+ * Reverse mapping used by the account.connected webhook: a Zernio profileId
+ * -> the user id encoded in the profile description.
+ */
+export async function getUserIdForProfileId(
+  profileId: string
+): Promise<string | null> {
+  const { profile } = await zernioFetch<{ profile: ZernioProfile }>(
+    `/profiles/${profileId}`
+  );
+  if (!profile.description?.startsWith(PROFILE_DESCRIPTION_PREFIX)) return null;
+  return profile.description.slice(PROFILE_DESCRIPTION_PREFIX.length);
+}
+
+/* ---------------------------- OAuth connect ----------------------------- */
+
+/** GET /v1/connect/{platform}?profileId=..&redirect_url=.. */
+export async function createAuthUrl(params: {
+  platform: SocialPlatform;
+  profileId: string;
+  redirectUrl: string;
+}) {
+  const qs = new URLSearchParams({
+    profileId: params.profileId,
+    redirect_url: params.redirectUrl,
+  });
+  return zernioFetch<{ authUrl: string; state?: string }>(
+    `/connect/${params.platform}?${qs.toString()}`
+  );
+}
+
+/* ------------------------------- Accounts ------------------------------- */
+
+interface ZernioAccount {
+  _id: string;
+  platform: string;
+  username?: string;
+  displayName?: string;
+  profileUrl?: string;
+  isActive?: boolean;
+}
+
+function mapAccount(a: ZernioAccount): SocialAccount {
+  return {
+    id: a._id,
+    platform: a.platform as SocialPlatform,
+    username: a.username,
+    display_name: a.displayName,
+    avatar_url: a.profileUrl,
+  };
+}
+
+/** GET /v1/accounts?profileId=.. — accounts owned by one user's profile. */
+export async function listAccounts(profileId: string) {
+  const qs = new URLSearchParams({ profileId });
+  const { accounts } = await zernioFetch<{ accounts: ZernioAccount[] }>(
+    `/accounts?${qs.toString()}`
+  );
+  return accounts.map(mapAccount);
+}
+
+/** DELETE /v1/accounts/{accountId} */
+export async function disconnectAccount(accountId: string) {
+  return zernioFetch<{ message?: string }>(`/accounts/${accountId}`, {
+    method: "DELETE",
+  });
+}
+
+/* -------------------------------- Posts --------------------------------- */
+
+function guessMediaType(url: string): "image" | "video" {
+  return /\.(mp4|mov|m4v|webm|mkv|avi)$/i.test(url) ? "video" : "image";
+}
+
+export interface CreatePostParams {
+  content: string;
+  profileId: string;
+  /** The connected accounts to publish to, with their platforms. */
+  targets: Array<{ accountId: string; platform: SocialPlatform }>;
+  mediaUrls?: string[];
+  scheduledAt?: string; // ISO 8601, omit to publish immediately
+}
+
+/** POST /v1/posts — publish (or schedule) content to one or more accounts. */
+export async function createPost(params: CreatePostParams) {
+  const body: Record<string, unknown> = {
+    content: params.content,
+    profileId: params.profileId,
+    platforms: params.targets.map((t) => ({
+      platform: t.platform,
+      accountId: t.accountId,
+    })),
+  };
+
+  if (params.mediaUrls?.length) {
+    body.mediaItems = params.mediaUrls.map((url) => ({
+      type: guessMediaType(url),
+      url,
+    }));
+  }
+  if (params.scheduledAt) {
+    body.scheduledFor = params.scheduledAt;
+    body.timezone = "UTC";
+  } else {
+    body.publishNow = true;
+  }
+
+  // Idempotency: a retry with the same x-request-id returns the original
+  // post instead of double-publishing (see Zernio docs).
+  const { post } = await zernioFetch<{
+    post: { _id: string; status: string };
+  }>("/posts", {
+    method: "POST",
+    headers: { "x-request-id": randomUUID() },
+    body: JSON.stringify(body),
+  });
+
+  return { id: post._id, status: post.status };
+}

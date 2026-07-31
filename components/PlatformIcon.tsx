@@ -1,7 +1,7 @@
-import type { SocialPlatform } from "@/lib/postforme";
+import type { SocialPlatform } from "@/lib/zernio";
 
 export const PLATFORMS: { id: SocialPlatform; label: string; color: string }[] = [
-  { id: "x", label: "X", color: "#000000" },
+  { id: "twitter", label: "X", color: "#000000" },
   { id: "instagram", label: "Instagram", color: "#E1306C" },
   { id: "facebook", label: "Facebook", color: "#1877F2" },
   { id: "linkedin", label: "LinkedIn", color: "#0A66C2" },

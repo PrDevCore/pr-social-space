@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { SocialPlatform } from "@/lib/postforme";
+import type { SocialPlatform } from "@/lib/zernio";
 import { PlatformBadge, PLATFORMS } from "./PlatformIcon";
 
-// (If social posting needed) -> [ Call Post for Me Auth URL Endpoint ]
-// This hits our own /api/social/auth-url route (never Post for Me
-// directly from the browser), then redirects the user's browser to the
-// URL it returns so they can grant OAuth access on the platform's site.
+// (If social posting needed) -> [ Call Zernio Auth URL Endpoint ]
+// This hits our own /api/social/auth-url route (never Zernio directly
+// from the browser), then redirects the user's browser to the URL it
+// returns so they can grant OAuth access on the platform's site.
 export default function ConnectAccountButton({
   platform,
 }: {

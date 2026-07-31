@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { SocialAccount } from "@/lib/postforme";
+import type { SocialAccount } from "@/lib/zernio";
 import { PlatformBadge } from "./PlatformIcon";
 
 export default function AccountCard({

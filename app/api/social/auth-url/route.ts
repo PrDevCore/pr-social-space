@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { createAuthUrl, SocialPlatform } from "@/lib/postforme";
+import { getCurrentUser } from "@/lib/auth";
+import { createAuthUrl, ensureProfileForUser, SocialPlatform } from "@/lib/zernio";
 
-// [ Call Post for Me Auth URL Endpoint ]
+// [ Call Zernio Auth URL Endpoint ]
 // The frontend hits this route after the user clicks "Connect X account".
-// We stamp the request with external_id = Clerk userId so the account we
-// get back is scoped to this user (see lib/postforme.ts + Post for Me's
-// "Multi-User Applications" guide).
+// Each user owns a Zernio profile (see lib/zernio.ts), so the account
+// we get back is scoped to this user and to nobody else.
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -19,27 +18,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const profileId = await ensureProfileForUser(user.id);
     const appUrl = process.env.APP_URL ?? req.nextUrl.origin;
 
-    // LinkedIn on Quickstart requires connection_type "organization",
-    // Instagram requires an explicit connection_type too — see Post for
-    // Me's Account Connections troubleshooting guide.
-    const platformData: Record<string, unknown> | undefined =
-      platform === "linkedin"
-        ? { linkedin: { connection_type: "organization" } }
-        : platform === "instagram"
-        ? { instagram: { connection_type: "instagram" } }
-        : undefined;
-
-    const { url } = await createAuthUrl({
+    const { authUrl } = await createAuthUrl({
       platform,
-      externalId: userId,
-      redirectUrlOverride: `${appUrl}/api/social/callback`,
-      platformData,
-      permissions: ["posts", "feeds"],
+      profileId,
+      redirectUrl: `${appUrl}/api/social/callback`,
     });
 
-    return NextResponse.json({ url });
+    return NextResponse.json({ url: authUrl });
   } catch (err) {
     console.error(err);
     return NextResponse.json(

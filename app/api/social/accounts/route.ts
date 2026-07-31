@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { listSocialAccounts } from "@/lib/postforme";
+import { getCurrentUser } from "@/lib/auth";
+import { ensureProfileForUser, listAccounts } from "@/lib/zernio";
 
-// GET /api/social/accounts — accounts belonging to the current Clerk user.
+// GET /api/social/accounts — accounts belonging to the current user.
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
+  const user = await getCurrentUser();
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { data } = await listSocialAccounts(userId);
-    return NextResponse.json({ accounts: data });
+    const profileId = await ensureProfileForUser(user.id);
+    const accounts = await listAccounts(profileId);
+    return NextResponse.json({ accounts });
   } catch (err) {
     console.error(err);
     return NextResponse.json(

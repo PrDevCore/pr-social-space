@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
 
 // [ Your Frontend Login ]
-// If the user already has a Clerk session, skip straight to /dashboard.
+// If the user already has a session, skip straight to /dashboard.
 export default async function Home() {
-  const { userId } = await auth();
-  if (userId) redirect("/dashboard");
+  const user = await getCurrentUser();
+  if (user) redirect("/dashboard");
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 text-center">
@@ -17,14 +17,14 @@ export default async function Home() {
         One dashboard. Every social account. One click to post.
       </h1>
       <p className="mt-4 max-w-xl text-black/60">
-        Sign in, connect TikTok, Instagram, X, LinkedIn and more via Post for
-        Me, then publish everywhere from a single composer.
+        Sign in, connect TikTok, Instagram, X, LinkedIn and more via Zernio,
+        then publish everywhere from a single composer.
       </p>
       <div className="mt-8 flex gap-3">
-        <Link href="/sign-in" className="btn-primary">
+        <Link href="/auth/login" className="btn-primary">
           Sign in
         </Link>
-        <Link href="/sign-up" className="btn-secondary">
+        <Link href="/auth/register" className="btn-secondary">
           Create account
         </Link>
       </div>

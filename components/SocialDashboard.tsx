@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { SocialAccount, SocialPlatform } from "@/lib/postforme";
+import type { SocialAccount, SocialPlatform } from "@/lib/zernio";
 import AccountCard from "./AccountCard";
 import ConnectAccountButton from "./ConnectAccountButton";
 import ComposePost from "./ComposePost";

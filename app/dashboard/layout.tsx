@@ -1,5 +1,5 @@
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import LogoutButton from "@/components/LogoutButton";
 
 export default function DashboardLayout({
   children,
@@ -13,7 +13,7 @@ export default function DashboardLayout({
           <Link href="/dashboard" className="font-semibold tracking-tight">
             Social Hub
           </Link>
-          <UserButton afterSignOutUrl="/" />
+          <LogoutButton />
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>

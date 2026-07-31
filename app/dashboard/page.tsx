@@ -1,27 +1,28 @@
-import { auth } from "@clerk/nextjs/server";
-import { listSocialAccounts, SocialAccount } from "@/lib/postforme";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { ensureProfileForUser, listAccounts, SocialAccount } from "@/lib/zernio";
 import SocialDashboard from "@/components/SocialDashboard";
 
 // [ Redirect to /dashboard ]
-// middleware.ts already guarantees userId exists here (route is protected),
-// but we double-check for type-safety / defense in depth.
+// middleware.ts already guarantees a session exists here (route is protected),
+// but we re-validate it for type-safety / defense in depth.
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: { isSuccess?: string; provider?: string; error?: string };
 }) {
-  const { userId } = await auth();
-  if (!userId) return null;
+  const user = await getCurrentUser();
+  if (!user) redirect("/auth/login");
 
   let accounts: SocialAccount[] = [];
   let loadError: string | null = null;
   try {
-    const res = await listSocialAccounts(userId);
-    accounts = res.data;
+    const profileId = await ensureProfileForUser(user.id);
+    accounts = await listAccounts(profileId);
   } catch (err) {
     console.error(err);
     loadError =
-      "Couldn't reach Post for Me. Check POSTFORME_API_KEY in your environment.";
+      "Couldn't reach Zernio. Check ZERNIO_API_KEY in your environment.";
   }
 
   const justConnected = searchParams.isSuccess === "true";
@@ -32,7 +33,8 @@ export default async function DashboardPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm text-black/60">
-          Connect your social accounts and publish to all of them at once.
+          Welcome back, {user.name}. Connect your social accounts and publish
+          to all of them at once.
         </p>
       </div>
 
