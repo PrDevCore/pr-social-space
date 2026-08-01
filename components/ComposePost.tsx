@@ -16,6 +16,7 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
   const [caption, setCaption] = useState("");
   const [mediaUrlInput, setMediaUrlInput] = useState("");
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [scheduleAt, setScheduleAt] = useState("");
   const [uploading, setUploading] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -96,13 +97,16 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
           caption,
           socialAccountIds: selected,
           mediaUrls: mediaUrls.length ? mediaUrls : undefined,
+          scheduledAt: scheduleAt ? new Date(scheduleAt).toISOString() : undefined,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      setResult(`Post ${data.id} is ${data.status}.`);
+      const action = scheduleAt ? "scheduled" : "published";
+      setResult(`Post ${data.id} is ${data.status} (${action}).`);
       setCaption("");
       setMediaUrls([]);
+      setScheduleAt("");
       setSelected([]);
     } catch (err) {
       console.error(err);
@@ -218,7 +222,7 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-medium">Post to</label>
+        <label className="mb-1 block text-sm font-medium">Post to</label>
         <div className="flex flex-wrap gap-2">
           {accounts.map((a) => (
             <button
@@ -238,13 +242,40 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={submitting || uploading || !caption.trim() || selected.length === 0}
-        className="btn-primary w-full sm:w-auto"
-      >
-        {submitting ? "Publishing…" : "Publish now"}
-      </button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <label className="flex flex-1 items-center gap-2">
+          <span className="text-sm font-medium">Schedule</span>
+          <input
+            type="datetime-local"
+            value={scheduleAt}
+            min={new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16)}
+            onChange={(e) => setScheduleAt(e.target.value)}
+            className="w-full rounded-xl border border-black/10 p-2.5 text-sm outline-none focus:border-accent"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={submitting || uploading || !caption.trim() || selected.length === 0}
+          className="btn-primary w-full sm:w-auto"
+        >
+          {submitting
+            ? "Sending…"
+            : scheduleAt
+            ? "Schedule post"
+            : "Publish now"}
+        </button>
+      </div>
+
+      {scheduleAt && (
+        <p className="text-xs text-black/50">
+          Will publish{" "}
+          {new Date(scheduleAt).toLocaleString(undefined, {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })}{" "}
+          instead of immediately.
+        </p>
+      )}
 
       {result && <p className="text-sm text-black/70">{result}</p>}
     </form>

@@ -94,6 +94,27 @@ export default function FeedSection() {
             </div>
           )}
 
+          {loading && (
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-20 w-16 animate-pulse rounded-lg bg-black/5"
+                  />
+                ))}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-48 animate-pulse rounded-xl bg-black/5"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {!loading && !error && !hasStories && !hasPosts && (
             <p className="text-sm text-black/50">
               No activity yet. Publish a post and it will show up here.
