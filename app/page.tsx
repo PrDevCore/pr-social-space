@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
@@ -10,9 +11,14 @@ export default async function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 text-center">
-      <span className="mb-4 rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-medium text-black/60">
-        Social Hub
-      </span>
+      <Image
+        src="/logo.png"
+        alt="Social Hub logo"
+        width={173}
+        height={115}
+        priority
+        className="mb-6"
+      />
       <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
         One dashboard. Every social account. One click to post.
       </h1>

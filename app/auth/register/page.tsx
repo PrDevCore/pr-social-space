@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
@@ -16,9 +17,14 @@ export default async function RegisterPage({
       <div className="w-full max-w-md">
         <div className="card p-8">
           <div className="mb-8 text-center">
-            <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-lg font-bold text-white">
-              S
-            </span>
+            <Image
+              src="/logo.png"
+              alt="Social Hub logo"
+              width={130}
+              height={86}
+              priority
+              className="mx-auto mb-4"
+            />
             <h1 className="text-2xl font-semibold tracking-tight">
               Create your account
             </h1>
