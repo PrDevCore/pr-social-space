@@ -252,3 +252,124 @@ export async function createPost(params: CreatePostParams) {
 
   return { id: post._id, status: post.status };
 }
+
+/* -------------------------------- Media --------------------------------- */
+
+/**
+ * Get a presigned URL to upload media directly to Zernio's storage.
+ * The browser PUTs the file bytes straight to `uploadUrl` (CORS-enabled),
+ * then uses `publicUrl` in post mediaItems.
+ */
+export async function presignMedia(input: {
+  filename: string;
+  contentType: string;
+}): Promise<{ uploadUrl: string; publicUrl: string }> {
+  return zernioFetch<{ uploadUrl: string; publicUrl: string }>(
+    "/media/presign",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        filename: input.filename,
+        contentType: input.contentType,
+      }),
+    }
+  );
+}
+
+/* ------------------------------ Live feeds ------------------------------ */
+
+export interface FeedMedia {
+  type: string;
+  url: string;
+  thumbnail?: string;
+}
+
+export interface FeedPostPlatform {
+  platform: SocialPlatform;
+  accountId: string;
+  accountName?: string;
+  status: string;
+  publishedUrl?: string;
+}
+
+export interface FeedPost {
+  id: string;
+  content: string;
+  status: string;
+  publishedAt?: string;
+  createdAt: string;
+  media: FeedMedia[];
+  platforms: FeedPostPlatform[];
+}
+
+export interface Story {
+  id: string;
+  mediaType: string;
+  mediaUrl?: string;
+  permalink?: string;
+  thumbnailUrl?: string;
+  timestamp?: string;
+}
+
+function mapPlatformTarget(t: {
+  platform: string;
+  accountId: string | { _id: string; username?: string; displayName?: string };
+  status?: string;
+  publishedAt?: string;
+  platformPostUrl?: string;
+}): FeedPostPlatform {
+  const isObject = typeof t.accountId === "object" && t.accountId !== null;
+  const embedded = isObject
+    ? (t.accountId as { _id: string; username?: string; displayName?: string })
+    : null;
+  return {
+    platform: t.platform as SocialPlatform,
+    accountId: embedded ? embedded._id : (t.accountId as string),
+    accountName: embedded?.displayName ?? embedded?.username,
+    status: t.status ?? "",
+    publishedUrl: t.platformPostUrl,
+  };
+}
+
+/** GET /v1/posts?profileId=.. — this user's posts (sorted newest first). */
+export async function listPosts(profileId: string, limit = 20): Promise<FeedPost[]> {
+  const qs = new URLSearchParams({ profileId, limit: String(limit) });
+  const { posts } = await zernioFetch<{ posts: any[] }>(`/posts?${qs.toString()}`);
+
+  const mapped = posts.map((p) => ({
+    id: p._id,
+    content: p.content ?? "",
+    status: p.status ?? "",
+    publishedAt: p.publishedAt ?? p.scheduledFor,
+    createdAt: p.createdAt,
+    media: (p.mediaItems ?? []).map((m: any) => ({
+      type: m.type ?? "image",
+      url: m.url,
+      thumbnail: m.thumbnail,
+    })),
+    platforms: (p.platforms ?? []).map(mapPlatformTarget),
+  }));
+
+  // Live feed = posts that actually went out (published or partially so).
+  const live = mapped.filter((p) => p.status === "published" || p.status === "partial");
+  return (live.length ? live : mapped).sort((a, b) =>
+    (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)
+  );
+}
+
+/** GET /v1/accounts/{accountId}/instagram/stories — active 24h stories. */
+export async function listInstagramStories(
+  accountId: string
+): Promise<Story[]> {
+  const { data } = await zernioFetch<{ data: any[] }>(
+    `/accounts/${accountId}/instagram/stories`
+  );
+  return (data ?? []).map((s) => ({
+    id: s.id,
+    mediaType: s.mediaType,
+    mediaUrl: s.mediaUrl,
+    permalink: s.permalink,
+    thumbnailUrl: s.thumbnailUrl,
+    timestamp: s.timestamp,
+  }));
+}

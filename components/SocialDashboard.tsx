@@ -5,6 +5,7 @@ import type { SocialAccount, SocialPlatform } from "@/lib/zernio";
 import AccountCard from "./AccountCard";
 import ConnectAccountButton from "./ConnectAccountButton";
 import ComposePost from "./ComposePost";
+import FeedSection from "./FeedSection";
 import { PLATFORMS } from "./PlatformIcon";
 
 export default function SocialDashboard({
@@ -60,6 +61,10 @@ export default function SocialDashboard({
           Compose
         </h2>
         <ComposePost accounts={accounts} />
+      </section>
+
+      <section className="lg:col-span-2">
+        <FeedSection />
       </section>
     </div>
   );
