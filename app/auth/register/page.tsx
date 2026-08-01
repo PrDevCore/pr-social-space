@@ -20,8 +20,8 @@ export default async function RegisterPage({
             <Image
               src="/logo.png"
               alt="Social Hub logo"
-              width={130}
-              height={86}
+              width={96}
+              height={96}
               priority
               className="mx-auto mb-4"
             />

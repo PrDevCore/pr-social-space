@@ -6,6 +6,10 @@ export const metadata: Metadata = {
   title: "Social Hub",
   description: "Manage every social account and post from one dashboard.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/favicon.ico" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({

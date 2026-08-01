@@ -14,8 +14,8 @@ export default async function Home() {
       <Image
         src="/logo.png"
         alt="Social Hub logo"
-        width={173}
-        height={115}
+        width={128}
+        height={128}
         priority
         className="mb-6"
       />

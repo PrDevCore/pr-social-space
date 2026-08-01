@@ -18,9 +18,9 @@ export default function DashboardLayout({
             <Image
               src="/logo.png"
               alt="Social Hub logo"
-              width={60}
-              height={40}
-              className="h-8 w-auto"
+              width={32}
+              height={32}
+              className="h-8 w-8 rounded-lg"
             />
           </Link>
           <LogoutButton />
