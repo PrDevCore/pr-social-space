@@ -297,6 +297,7 @@ export interface FeedPost {
   content: string;
   status: string;
   publishedAt?: string;
+  scheduledFor?: string;
   createdAt: string;
   media: FeedMedia[];
   platforms: FeedPostPlatform[];
@@ -331,16 +332,13 @@ function mapPlatformTarget(t: {
   };
 }
 
-/** GET /v1/posts?profileId=.. — this user's posts (sorted newest first). */
-export async function listPosts(profileId: string, limit = 20): Promise<FeedPost[]> {
-  const qs = new URLSearchParams({ profileId, limit: String(limit) });
-  const { posts } = await zernioFetch<{ posts: any[] }>(`/posts?${qs.toString()}`);
-
-  const mapped = posts.map((p) => ({
+function mapFeedPost(p: any): FeedPost {
+  return {
     id: p._id,
     content: p.content ?? "",
     status: p.status ?? "",
     publishedAt: p.publishedAt ?? p.scheduledFor,
+    scheduledFor: p.scheduledFor,
     createdAt: p.createdAt,
     media: (p.mediaItems ?? []).map((m: any) => ({
       type: m.type ?? "image",
@@ -348,13 +346,53 @@ export async function listPosts(profileId: string, limit = 20): Promise<FeedPost
       thumbnail: m.thumbnail,
     })),
     platforms: (p.platforms ?? []).map(mapPlatformTarget),
-  }));
+  };
+}
+
+async function fetchPosts(
+  profileId: string,
+  opts: { limit?: number; status?: string; sortBy?: string } = {}
+): Promise<FeedPost[]> {
+  const qs = new URLSearchParams({ profileId, limit: String(opts.limit ?? 20) });
+  if (opts.status) qs.set("status", opts.status);
+  if (opts.sortBy) qs.set("sortBy", opts.sortBy);
+  const { posts } = await zernioFetch<{ posts: any[] }>(
+    `/posts?${qs.toString()}`
+  );
+  return (posts ?? []).map(mapFeedPost);
+}
+
+/** GET /v1/posts?profileId=.. — this user's posts (sorted newest first). */
+export async function listPosts(profileId: string, limit = 20): Promise<FeedPost[]> {
+  const mapped = await fetchPosts(profileId, { limit });
 
   // Live feed = posts that actually went out (published or partially so).
   const live = mapped.filter((p) => p.status === "published" || p.status === "partial");
   return (live.length ? live : mapped).sort((a, b) =>
     (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)
   );
+}
+
+/** GET /v1/posts?status=scheduled — this user's upcoming scheduled posts. */
+export async function listScheduledPosts(
+  profileId: string,
+  limit = 50
+): Promise<FeedPost[]> {
+  const posts = await fetchPosts(profileId, {
+    limit,
+    status: "scheduled",
+    sortBy: "scheduled-desc",
+  });
+  return posts.sort((a, b) =>
+    (a.scheduledFor ?? a.createdAt).localeCompare(b.scheduledFor ?? b.createdAt)
+  );
+}
+
+/** DELETE /v1/posts/{postId} — cancel a scheduled (not yet published) post. */
+export async function cancelPost(postId: string) {
+  return zernioFetch<{ message?: string }>(`/posts/${postId}`, {
+    method: "DELETE",
+  });
 }
 
 /** GET /v1/accounts/{accountId}/instagram/stories — active 24h stories. */

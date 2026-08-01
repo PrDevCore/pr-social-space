@@ -97,6 +97,22 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
   return toPublicUser(snap.data() as UserRecord);
 }
 
+export async function updateUser(
+  id: string,
+  patch: { name?: string }
+): Promise<PublicUser | null> {
+  const doc = users().doc(id);
+  const snap = await doc.get();
+  if (!snap.exists) return null;
+  const current = snap.data() as UserRecord;
+  const updated: UserRecord = {
+    ...current,
+    name: patch.name?.trim() || current.name,
+  };
+  await doc.set(updated);
+  return toPublicUser(updated);
+}
+
 /* ------------------------------- Sessions ------------------------------- */
 
 export async function createSession(userId: string, token: string) {

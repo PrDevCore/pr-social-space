@@ -12,7 +12,12 @@ import { NextResponse, type NextRequest } from "next/server";
 const SESSION_COOKIE = "session";
 
 function isProtectedRoute(pathname: string) {
-  return pathname.startsWith("/dashboard") || pathname.startsWith("/api/social");
+  return (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/api/social") ||
+    pathname.startsWith("/api/ai")
+  );
 }
 
 export default function middleware(req: NextRequest) {

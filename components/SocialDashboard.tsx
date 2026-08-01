@@ -8,9 +8,10 @@ import ComposePost from "./ComposePost";
 import ConnectAccountButton from "./ConnectAccountButton";
 import DashboardStats from "./DashboardStats";
 import FeedSection from "./FeedSection";
+import SchedulerPanel from "./SchedulerPanel";
 import { PLATFORMS } from "./PlatformIcon";
 
-type Tab = "compose" | "feeds" | "activity";
+type Tab = "compose" | "feeds" | "activity" | "scheduler";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   {
@@ -37,6 +38,15 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    id: "scheduler",
+    label: "Scheduler",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z" />
       </svg>
     ),
   },
@@ -128,6 +138,7 @@ export default function SocialDashboard({
           {tab === "compose" && <ComposePost accounts={accounts} />}
           {tab === "feeds" && <FeedSection />}
           {tab === "activity" && <ActivityPanel accounts={accounts} />}
+          {tab === "scheduler" && <SchedulerPanel accounts={accounts} />}
         </main>
       </div>
     </div>
