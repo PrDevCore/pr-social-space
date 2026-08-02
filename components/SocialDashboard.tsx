@@ -136,7 +136,7 @@ export default function SocialDashboard({
           </nav>
 
           {tab === "compose" && <ComposePost accounts={accounts} />}
-          {tab === "feeds" && <FeedSection />}
+          {tab === "feeds" && <FeedSection accounts={accounts} />}
           {tab === "activity" && <ActivityPanel accounts={accounts} />}
           {tab === "scheduler" && <SchedulerPanel accounts={accounts} />}
         </main>

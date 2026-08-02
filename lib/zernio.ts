@@ -69,7 +69,9 @@ export interface SocialAccount {
   platform: SocialPlatform;
   username?: string;
   display_name?: string;
-  avatar_url?: string;
+  avatar_url?: string; // platform profile picture URL (may be null on some platforms)
+  profile_url?: string; // link to the account's profile on the platform
+  followers_count?: number;
 }
 
 /* ------------------------------- Profiles ------------------------------- */
@@ -171,7 +173,9 @@ interface ZernioAccount {
   platform: string;
   username?: string;
   displayName?: string;
+  profilePicture?: string;
   profileUrl?: string;
+  followersCount?: number;
   isActive?: boolean;
 }
 
@@ -181,7 +185,9 @@ function mapAccount(a: ZernioAccount): SocialAccount {
     platform: a.platform as SocialPlatform,
     username: a.username,
     display_name: a.displayName,
-    avatar_url: a.profileUrl,
+    avatar_url: a.profilePicture,
+    profile_url: a.profileUrl,
+    followers_count: a.followersCount,
   };
 }
 

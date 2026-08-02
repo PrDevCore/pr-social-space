@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { generateCaption } from "@/lib/gemini";
 
+// Allow longer serverless execution for large media downloads.
+export const maxDuration = 60;
+
 // POST /api/ai/caption { mediaUrl?, context? }
-// Generates an appropriate caption for the media using Gemini. The image is
-// fetched server-side (from a Zernio publicUrl or any public URL) and sent to
-// Gemini as inline data — the GEMINI_API_KEY never reaches the browser.
+// Generates an appropriate caption for the media using Gemini. The image/video
+// is fetched server-side (from a Zernio publicUrl or any public URL). Images go
+// inline as base64; videos are uploaded to the Gemini Files API — the
+// GEMINI_API_KEY never reaches the browser.
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
@@ -20,46 +24,61 @@ export async function POST(req: NextRequest) {
   }
 
   const mediaUrl = body.mediaUrl?.trim();
+  if (!mediaUrl) {
+    return NextResponse.json(
+      { error: "mediaUrl is required." },
+      { status: 400 }
+    );
+  }
 
   let image: { mimeType: string; data: string } | undefined;
-  if (mediaUrl) {
-    try {
-      const imgRes = await fetch(mediaUrl, { cache: "no-store" });
-      if (!imgRes.ok) {
-        return NextResponse.json(
-          { error: "Couldn't fetch the media for analysis." },
-          { status: 422 }
-        );
-      }
-      const buf = await imgRes.arrayBuffer();
-      const mimeType =
-        imgRes.headers.get("content-type")?.split(";")[0]?.trim() ||
-        "image/jpeg";
-      if (!mimeType.startsWith("image/")) {
-        return NextResponse.json(
-          { error: "AI captions work with images, not this media type." },
-          { status: 422 }
-        );
-      }
-      const b64 = Buffer.from(buf).toString("base64");
-      if (b64.length > 5_000_000) {
+  let video: { mimeType: string; data: Buffer } | undefined;
+
+  try {
+    const mediaRes = await fetch(mediaUrl, { cache: "no-store" });
+    if (!mediaRes.ok) {
+      return NextResponse.json(
+        { error: "Couldn't fetch the media for analysis." },
+        { status: 422 }
+      );
+    }
+    const buf = Buffer.from(await mediaRes.arrayBuffer());
+    const mime =
+      mediaRes.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() ??
+      "";
+
+    if (mime.startsWith("image/")) {
+      if (buf.length > 8_000_000) {
         return NextResponse.json(
           { error: "Image is too large for caption generation." },
           { status: 413 }
         );
       }
-      image = { mimeType, data: b64 };
-    } catch (err) {
-      console.error("fetch media for AI:", err);
+      image = { mimeType: mime, data: buf.toString("base64") };
+    } else if (mime.startsWith("video/")) {
+      if (buf.length > 100_000_000) {
+        return NextResponse.json(
+          { error: "Video is too large (max 100 MB)." },
+          { status: 413 }
+        );
+      }
+      video = { mimeType: mime, data: buf };
+    } else {
       return NextResponse.json(
-        { error: "Couldn't read the media for analysis." },
-        { status: 502 }
+        { error: "AI captions work with images or videos." },
+        { status: 422 }
       );
     }
+  } catch (err) {
+    console.error("fetch media for AI:", err);
+    return NextResponse.json(
+      { error: "Couldn't read the media for analysis." },
+      { status: 502 }
+    );
   }
 
   try {
-    const caption = await generateCaption({ image, context: body.context });
+    const caption = await generateCaption({ image, video, context: body.context });
     return NextResponse.json({ caption });
   } catch (err) {
     console.error("gemini caption:", err);

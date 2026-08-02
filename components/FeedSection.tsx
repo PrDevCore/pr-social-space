@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { FeedPost, Story } from "@/lib/zernio";
+import type { FeedPost, SocialAccount, Story } from "@/lib/zernio";
 import { PlatformBadge } from "./PlatformIcon";
 
 interface StoryGroup {
@@ -27,7 +27,83 @@ function formatDate(iso?: string) {
   });
 }
 
-export default function FeedSection() {
+function AccountAvatar({ account, size }: { account: SocialAccount; size: number }) {
+  const initials = (account.display_name ?? account.username ?? account.id)
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return account.avatar_url ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={account.avatar_url}
+      alt=""
+      style={{ width: size, height: size }}
+      className="rounded-full object-cover ring-2 ring-white"
+    />
+  ) : (
+    <span
+      style={{ width: size, height: size, fontSize: size / 2.5 }}
+      className="flex items-center justify-center rounded-full font-semibold text-white"
+    >
+      {initials}
+    </span>
+  );
+}
+
+function PostCard({ post }: { post: FeedPost }) {
+  const image = post.media.find((m) => m.type === "image");
+  const isVideo = post.media.some((m) => m.type === "video" || m.type === "gif");
+  return (
+    <article className="overflow-hidden rounded-xl border border-black/10 bg-white">
+      {image && (
+        <div className="aspect-video w-full overflow-hidden bg-black/5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+        </div>
+      )}
+      {!image && isVideo && (
+        <div className="flex aspect-video w-full items-center justify-center bg-black/5 text-xs text-black/50">
+          Video post
+        </div>
+      )}
+      <div className="space-y-2 p-3">
+        <p className="line-clamp-3 text-sm text-black/80">
+          {post.content || "(no caption)"}
+        </p>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-1">
+            {post.platforms.map((p, i) =>
+              p.publishedUrl ? (
+                <a
+                  key={`${post.id}-${i}`}
+                  href={p.publishedUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Open original post"
+                >
+                  <PlatformBadge platform={p.platform} />
+                </a>
+              ) : (
+                <PlatformBadge key={`${post.id}-${i}`} platform={p.platform} />
+              )
+            )}
+          </div>
+          <span className="shrink-0 text-[11px] text-black/40">
+            {formatDate(post.publishedAt ?? post.createdAt)}
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export default function FeedSection({
+  accounts,
+}: {
+  accounts: SocialAccount[];
+}) {
   const [open, setOpen] = useState(true);
   const [data, setData] = useState<FeedData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +132,18 @@ export default function FeedSection() {
   }, [load]);
 
   const hasStories = (data?.stories ?? []).some((g) => g.stories.length > 0);
-  const hasPosts = (data?.posts ?? []).length > 0;
+
+  // Group each account's previous posts so the feed reads per connected account.
+  const postsByAccount = accounts
+    .map((account) => ({
+      account,
+      posts: (data?.posts ?? []).filter((p) =>
+        p.platforms.some((pl) => pl.accountId === account.id)
+      ),
+    }))
+    .filter((g) => g.posts.length > 0);
+
+  const hasPosts = postsByAccount.length > 0;
 
   return (
     <section className="card p-6">
@@ -98,18 +185,12 @@ export default function FeedSection() {
             <div className="space-y-4">
               <div className="flex gap-3">
                 {[0, 1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-20 w-16 animate-pulse rounded-lg bg-black/5"
-                  />
+                  <div key={i} className="h-20 w-16 animate-pulse rounded-lg bg-black/5" />
                 ))}
               </div>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {[0, 1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-48 animate-pulse rounded-xl bg-black/5"
-                  />
+                  <div key={i} className="h-48 animate-pulse rounded-xl bg-black/5" />
                 ))}
               </div>
             </div>
@@ -167,57 +248,30 @@ export default function FeedSection() {
           )}
 
           {hasPosts && (
-            <div>
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-black/50">
-                Recent posts
+            <div className="space-y-6">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-black/50">
+                Previous posts by account
               </h3>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {(data?.posts ?? []).map((post) => (
-                  <article
-                    key={post.id}
-                    className="overflow-hidden rounded-xl border border-black/10 bg-white"
-                  >
-                    {post.media.filter((m) => m.type === "image").length > 0 && (
-                      <div className="aspect-video w-full overflow-hidden bg-black/5">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={post.media[0].url}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    <div className="space-y-2 p-3">
-                      <p className="line-clamp-3 text-sm text-black/80">
-                        {post.content || "(no caption)"}
+              {postsByAccount.map(({ account, posts }) => (
+                <div key={account.id}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <AccountAvatar account={account} size={28} />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {account.display_name ?? account.username ?? account.id}
                       </p>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex flex-wrap gap-1">
-                          {post.platforms.map((p, i) =>
-                            p.publishedUrl ? (
-                              <a
-                                key={`${post.id}-${i}`}
-                                href={p.publishedUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                title="Open original post"
-                              >
-                                <PlatformBadge platform={p.platform} />
-                              </a>
-                            ) : (
-                              <PlatformBadge key={`${post.id}-${i}`} platform={p.platform} />
-                            )
-                          )}
-                        </div>
-                        <span className="shrink-0 text-[11px] text-black/40">
-                          {formatDate(post.publishedAt ?? post.createdAt)}
-                        </span>
-                      </div>
+                      <p className="text-[11px] text-black/40">
+                        {posts.length} post{posts.length !== 1 ? "s" : ""}
+                      </p>
                     </div>
-                  </article>
-                ))}
-              </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {posts.map((post) => (
+                      <PostCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

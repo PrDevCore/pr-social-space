@@ -64,7 +64,18 @@ export default function AccountCard({
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">
-            {account.display_name ?? account.username ?? account.id}
+            {account.profile_url ? (
+              <a
+                href={account.profile_url}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:underline"
+              >
+                {account.display_name ?? account.username ?? account.id}
+              </a>
+            ) : (
+              account.display_name ?? account.username ?? account.id
+            )}
           </p>
           <div className="flex items-center gap-1.5">
             <PlatformBadge platform={account.platform} />
@@ -72,6 +83,11 @@ export default function AccountCard({
               <p className="truncate text-xs text-black/50">@{account.username}</p>
             )}
           </div>
+          {account.followers_count != null && (
+            <p className="text-[11px] text-black/40">
+              {account.followers_count.toLocaleString()} followers
+            </p>
+          )}
         </div>
       </div>
       <button
