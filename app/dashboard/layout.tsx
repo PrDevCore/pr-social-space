@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function DashboardLayout({
   children,
@@ -24,6 +25,7 @@ export default function DashboardLayout({
             />
           </Link>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link
               href="/content"
               className="flex items-center gap-1.5 rounded-xl border border-black/10 bg-white px-3 py-1.5 text-xs font-medium hover:bg-black/5"

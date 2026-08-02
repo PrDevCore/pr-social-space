@@ -22,3 +22,145 @@ body {
 .btn-secondary {
   @apply btn border border-black/10 bg-white text-ink hover:bg-black/5;
 }
+
+/* ------------------------------ Dark theme ------------------------------ */
+/*
+ * The app is styled with light-mode utility classes (bg-white, text-black/50,
+ * border-black/10, …). Rather than adding `dark:` variants to every component,
+ * a single `.dark` override layer re-maps those recurring tokens to a dark
+ * palette. Rules live outside any @layer so they beat Tailwind's layered
+ * utilities. Lightbox overlays (bg-black/40+) and text-on-brand colors are
+ * intentionally left untouched so they stay consistent in both themes.
+ */
+
+.dark {
+  color-scheme: dark;
+  --surface: #171a21;
+  --surface-subtle: rgba(255, 255, 255, 0.06);
+  --surface-subtle-strong: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.12);
+  --text-strong: rgba(255, 255, 255, 0.92);
+  --text-mid: rgba(255, 255, 255, 0.68);
+  --text-muted: rgba(255, 255, 255, 0.5);
+  --text-faint: rgba(255, 255, 255, 0.38);
+}
+
+.dark body {
+  background: #0f1115;
+  color: #e6e8ee;
+}
+
+/* @apply-based classes (values are baked in, not utilities) */
+.dark .card {
+  background-color: var(--surface);
+  border-color: var(--border);
+}
+.dark .btn-secondary {
+  background-color: var(--surface);
+  border-color: var(--border);
+  color: var(--text-strong);
+}
+.dark .btn-primary {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+/* Surfaces */
+.dark .bg-white {
+  background-color: var(--surface);
+}
+.dark .bg-paper {
+  background-color: #0f1115;
+}
+.dark .bg-black\/5,
+.dark .bg-black\/\[0\.02\],
+.dark .bg-black\/\[0\.03\] {
+  background-color: var(--surface-subtle);
+}
+.dark .bg-black\/10 {
+  background-color: var(--surface-subtle-strong);
+}
+
+/* Borders */
+.dark .border-black\/5,
+.dark .border-black\/10,
+.dark .border-black\/15,
+.dark .border-black\/20,
+.dark .border-black\/25 {
+  border-color: var(--border);
+}
+
+/* Text */
+.dark .text-black,
+.dark .text-black\/80 {
+  color: var(--text-strong);
+}
+.dark .text-black\/70,
+.dark .text-black\/60 {
+  color: var(--text-mid);
+}
+.dark .text-black\/50 {
+  color: var(--text-muted);
+}
+.dark .text-black\/40 {
+  color: var(--text-faint);
+}
+.dark .text-ink {
+  color: var(--text-strong);
+}
+.dark .hover\:text-black:hover {
+  color: var(--text-strong);
+}
+
+/* Hover fills */
+.dark .hover\:bg-black\/5:hover {
+  background-color: var(--surface-subtle);
+}
+.dark .hover\:bg-red-50:hover {
+  background-color: rgba(127, 29, 29, 0.35);
+}
+.dark .hover\:text-red-600:hover {
+  color: #fca5a5;
+}
+
+/* Ink buttons / active tabs stay dark but get a faint ring to stand out */
+.dark .bg-ink {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+/* Alert & status boxes — dark-tinted so they stay readable */
+.dark .bg-red-50 {
+  background-color: #3b1118;
+}
+.dark .bg-red-100 {
+  background-color: #4a141d;
+}
+.dark .border-red-200 {
+  border-color: #7f1d1d;
+}
+.dark .text-red-700,
+.dark .text-red-800 {
+  color: #fca5a5;
+}
+.dark .bg-amber-50 {
+  background-color: #33230f;
+}
+.dark .bg-amber-100 {
+  background-color: #402c13;
+}
+.dark .border-amber-200 {
+  border-color: #92400e;
+}
+.dark .text-amber-700,
+.dark .text-amber-800 {
+  color: #fcd34d;
+}
+.dark .bg-green-50 {
+  background-color: #0f2e1c;
+}
+.dark .bg-green-100 {
+  background-color: #123622;
+}
+.dark .text-green-700,
+.dark .text-green-800 {
+  color: #86efac;
+}

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import ThemeToggle from "@/components/ThemeToggle";
 import RegisterForm from "./RegisterForm";
 
 export default async function RegisterPage({
@@ -13,7 +14,10 @@ export default async function RegisterPage({
   if (user) redirect("/dashboard");
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-paper px-4 py-10">
+    <main className="relative flex min-h-screen items-center justify-center bg-paper px-4 py-10">
+      <div className="absolute right-6 top-6">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-md">
         <div className="card p-8">
           <div className="mb-8 text-center">

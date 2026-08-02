@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import SWCleanup from "@/components/SWCleanup";
+import ThemeProvider from "@/components/ThemeProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,10 +19,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased">
-        {children}
-        <SWCleanup />
+        <ThemeProvider>
+          {children}
+          <SWCleanup />
+        </ThemeProvider>
       </body>
     </html>
   );

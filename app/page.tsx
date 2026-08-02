@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import ThemeToggle from "@/components/ThemeToggle";
 
 // [ Your Frontend Login ]
 // If the user already has a session, skip straight to /dashboard.
@@ -10,7 +11,10 @@ export default async function Home() {
   if (user) redirect("/dashboard");
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 text-center">
+    <main className="relative mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 text-center">
+      <div className="absolute right-6 top-6">
+        <ThemeToggle />
+      </div>
       <Image
         src="/logo.png"
         alt="Social Hub logo"
