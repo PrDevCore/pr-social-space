@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { SocialAccount } from "@/lib/zernio";
 import { PlatformBadge } from "./PlatformIcon";
+import PostPreview from "./PostPreview";
 
 function fileName(url: string) {
   try {
@@ -10,10 +11,6 @@ function fileName(url: string) {
   } catch {
     return url;
   }
-}
-
-function isImageUrl(url: string) {
-  return /\.(jpe?g|png|gif|webp|avif|svg|bmp|ico)$/i.test(url);
 }
 
 export default function ComposePost({ accounts }: { accounts: SocialAccount[] }) {
@@ -25,7 +22,6 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
   const [selected, setSelected] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -143,7 +139,6 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
       setMediaUrls([]);
       setScheduleAt("");
       setSelected([]);
-      setShowPreview(false);
     } catch (err) {
       console.error(err);
       setResult("Something went wrong publishing that post.");
@@ -160,10 +155,9 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
     );
   }
 
-  const previewImage = mediaUrls.find(isImageUrl);
-
   return (
-    <form onSubmit={handleSubmit} className="card space-y-4">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <form onSubmit={handleSubmit} className="card space-y-4">
       <div>
         <div className="mb-1 flex items-center justify-between gap-2">
           <label className="text-sm font-medium">Caption</label>
@@ -312,14 +306,6 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
         </label>
         <div className="flex gap-2">
           <button
-            type="button"
-            onClick={() => setShowPreview(true)}
-            disabled={!caption.trim() || selected.length === 0}
-            className="btn-secondary"
-          >
-            Preview
-          </button>
-          <button
             type="submit"
             disabled={submitting || uploading || !caption.trim() || selected.length === 0}
             className="btn-primary"
@@ -341,85 +327,14 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
       )}
 
       {result && <p className="text-sm text-black/70">{result}</p>}
+      </form>
 
-      {showPreview && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setShowPreview(false)}
-        >
-          <div
-            className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-black/10 px-5 py-3">
-              <h3 className="text-sm font-semibold">Post preview</h3>
-              <button
-                type="button"
-                onClick={() => setShowPreview(false)}
-                className="rounded-lg p-1 text-black/50 hover:bg-black/5"
-                aria-label="Close preview"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="max-h-[60vh] space-y-3 overflow-y-auto p-5">
-              {previewImage && (
-                <div className="overflow-hidden rounded-xl bg-black/5">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={previewImage} alt="Media preview" className="max-h-64 w-full object-cover" />
-                </div>
-              )}
-              {mediaUrls.length > 0 && !previewImage && (
-                <p className="rounded-xl bg-black/5 px-3 py-2 text-xs text-black/60">
-                  {mediaUrls.length} media item{mediaUrls.length > 1 ? "s" : ""} attached (video or file)
-                </p>
-              )}
-
-              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink">
-                {caption}
-              </p>
-
-              <div className="flex flex-wrap gap-1.5">
-                {selectedAccounts.map((a) => (
-                  <span key={a.id} className="inline-flex items-center gap-1.5 rounded-full border border-black/10 px-2 py-1 text-xs">
-                    <PlatformBadge platform={a.platform} />
-                    {a.username ?? a.id}
-                  </span>
-                ))}
-              </div>
-
-              <p className="text-xs text-black/50">
-                {scheduleAt
-                  ? `Scheduled for ${new Date(scheduleAt).toLocaleString(undefined, {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}`
-                  : "Publish immediately"}
-              </p>
-            </div>
-
-            <div className="flex justify-end gap-2 border-t border-black/10 px-5 py-3">
-              <button
-                type="button"
-                onClick={() => setShowPreview(false)}
-                className="btn-secondary"
-              >
-                Edit
-              </button>
-              <button
-                type="submit"
-                disabled={submitting || uploading}
-                className="btn-primary"
-              >
-                {submitting ? "Sending…" : scheduleAt ? "Schedule post" : "Publish now"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </form>
+      <PostPreview
+        caption={caption}
+        mediaUrls={mediaUrls}
+        accounts={selectedAccounts}
+        scheduleAt={scheduleAt}
+      />
+    </div>
   );
 }
