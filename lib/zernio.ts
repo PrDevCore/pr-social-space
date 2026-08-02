@@ -379,6 +379,17 @@ export async function listPosts(profileId: string, limit = 20): Promise<FeedPost
   );
 }
 
+/** GET /v1/posts — every post (published, partial, scheduled), newest first. */
+export async function listAllPosts(
+  profileId: string,
+  limit = 100
+): Promise<FeedPost[]> {
+  const mapped = await fetchPosts(profileId, { limit });
+  return mapped.sort((a, b) =>
+    (b.createdAt ?? "").localeCompare(a.createdAt ?? "")
+  );
+}
+
 /** GET /v1/posts?status=scheduled — this user's upcoming scheduled posts. */
 export async function listScheduledPosts(
   profileId: string,

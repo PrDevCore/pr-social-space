@@ -14,6 +14,7 @@ const SESSION_COOKIE = "session";
 function isProtectedRoute(pathname: string) {
   return (
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/content") ||
     pathname.startsWith("/profile") ||
     pathname.startsWith("/api/social") ||
     pathname.startsWith("/api/ai")
