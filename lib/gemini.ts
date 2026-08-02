@@ -5,8 +5,10 @@ import "server-only";
  * The GEMINI_API_KEY must never reach the browser; the /api/ai/caption route
  * calls through here on behalf of the signed-in user.
  *
- * Images are sent inline as base64. Videos are uploaded to the Gemini Files
- * API (which handles large files) and referenced by URI.
+ * Images and small videos are sent inline as base64 (fast, no server-side
+ * processing wait). Larger videos are uploaded to the Gemini Files API —
+ * which transcodes them at ~1fps — and referenced by URI. That File API path
+ * can take a while, so the Files-API fallback polls for up to FILE_READY_TIMEOUT.
  */
 
 const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
@@ -15,6 +17,11 @@ const API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/" +
   `${MODEL}:generateContent`;
 const UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files";
+
+// Keep the total inline request payload comfortably under Gemini's 20MB
+// recommendation: 15MB of raw bytes base64-encodes to ~20MB.
+const MAX_INLINE_VIDEO_BYTES = 15 * 1024 * 1024;
+const FILE_READY_TIMEOUT_MS = 120_000;
 
 function buildPrompt(opts: {
   hasImage: boolean;
@@ -73,11 +80,18 @@ async function uploadVideoFile(opts: {
     throw new Error(`Gemini upload error ${res.status}: ${body.slice(0, 300)}`);
   }
   const data = await res.json();
+  if (!data.file?.uri || !data.file?.name) {
+    throw new Error("Gemini upload didn't return a file reference.");
+  }
   return { uri: data.file.uri, name: data.file.name };
 }
 
-/** Poll the file until Gemini has finished processing it. */
-async function waitForFileReady(name: string, timeoutMs = 45000): Promise<boolean> {
+/**
+ * Poll the file until Gemini finishes processing it. Distinguishes a genuine
+ * processing failure (FAILED) from simply not being ready yet (timeout).
+ * Throws on failure so callers get an accurate message.
+ */
+async function waitForFileReady(name: string, timeoutMs = FILE_READY_TIMEOUT_MS): Promise<void> {
   if (!API_KEY) throw new Error("GEMINI_API_KEY is not set.");
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -85,18 +99,28 @@ async function waitForFileReady(name: string, timeoutMs = 45000): Promise<boolea
       `https://generativelanguage.googleapis.com/v1beta/files/${name}`,
       { headers: { "x-goog-api-key": API_KEY } }
     );
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Gemini file status error ${res.status}: ${body.slice(0, 300)}`);
+    }
     const data = await res.json().catch(() => ({}));
     const state = data.file?.state;
-    if (state === "PROCESSED") return true;
-    if (state === "FAILED") return false;
-    await new Promise((r) => setTimeout(r, 1500));
+    if (state === "PROCESSED") return;
+    if (state === "FAILED") {
+      throw new Error(
+        "Gemini couldn't process this video (unsupported codec or corrupted file). Try a standard H.264 MP4."
+      );
+    }
+    await new Promise((r) => setTimeout(r, 2000));
   }
-  return false;
+  throw new Error(
+    "Gemini is still processing this video. Try a shorter or smaller video (under 15 MB) for faster results."
+  );
 }
 
 export interface CaptionInput {
   image?: { mimeType: string; data: string }; // base64 inline image
-  video?: { mimeType: string; data: Buffer }; // raw bytes, uploaded via Files API
+  video?: { mimeType: string; data: Buffer }; // raw bytes
   context?: string;
 }
 
@@ -114,13 +138,24 @@ export async function generateCaption(input: CaptionInput): Promise<string> {
     });
   }
   if (input.video) {
-    const file = await uploadVideoFile({
-      mimeType: input.video.mimeType,
-      data: input.video.data,
-    });
-    const ready = await waitForFileReady(file.name);
-    if (!ready) throw new Error("Gemini couldn't process the video in time.");
-    parts.push({ fileData: { mimeType: input.video.mimeType, fileUri: file.uri } });
+    if (input.video.data.length <= MAX_INLINE_VIDEO_BYTES) {
+      // Small video: send inline as base64 — no Files API wait required.
+      parts.push({
+        inlineData: {
+          mimeType: input.video.mimeType,
+          data: input.video.data.toString("base64"),
+        },
+      });
+    } else {
+      const file = await uploadVideoFile({
+        mimeType: input.video.mimeType,
+        data: input.video.data,
+      });
+      await waitForFileReady(file.name);
+      parts.push({
+        fileData: { mimeType: input.video.mimeType, fileUri: file.uri },
+      });
+    }
   }
   parts.push({
     text: buildPrompt({

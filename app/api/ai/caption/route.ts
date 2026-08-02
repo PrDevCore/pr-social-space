@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { generateCaption } from "@/lib/gemini";
 
-// Allow longer serverless execution for large media downloads.
-export const maxDuration = 60;
+// Allow longer serverless execution for large media downloads and the
+// Files API fallback for big videos.
+export const maxDuration = 300;
 
 // POST /api/ai/caption { mediaUrl?, context? }
 // Generates an appropriate caption for the media using Gemini. The image/video
-// is fetched server-side (from a Zernio publicUrl or any public URL). Images go
-// inline as base64; videos are uploaded to the Gemini Files API — the
-// GEMINI_API_KEY never reaches the browser.
+// is fetched server-side (from a Zernio publicUrl or any public URL). Images
+// and small videos (<=15 MB) go inline as base64; larger videos use the Gemini
+// Files API. The GEMINI_API_KEY never reaches the browser.
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
