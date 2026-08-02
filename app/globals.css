@@ -23,8 +23,7 @@ body {
   @apply btn border border-black/10 bg-white text-ink hover:bg-black/5;
 }
 
-/* ------------------------------ Dark theme ------------------------------ */
-/*
+/* ------------------------------ Dark theme ------------------------------ *//*
  * The app is styled with light-mode utility classes (bg-white, text-black/50,
  * border-black/10, …). Rather than adding `dark:` variants to every component,
  * a single `.dark` override layer re-maps those recurring tokens to a dark
@@ -163,4 +162,61 @@ body {
 .dark .text-green-700,
 .dark .text-green-800 {
   color: #86efac;
+}
+
+/* --------------------------- Landing animations --------------------------
+ * Shared keyframes for the interactive landing mockup and metrics band.
+ * All purely decorative, no motion-sensitivity concerns are violated by
+ * default; reduced-motion users get static states via prefers-reduced-motion.
+ */
+
+@keyframes landing-bar-pulse {
+  0%,
+  100% {
+    transform: scaleY(0.7);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes landing-line-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.landing-float {
+  animation: landing-float 6s ease-in-out infinite;
+}
+
+.landing-bar {
+  transform-origin: bottom;
+  animation: landing-bar-pulse 2.4s ease-in-out infinite;
+}
+
+.landing-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: landing-line-draw 2.2s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-float,
+  .landing-bar,
+  .landing-line {
+    animation: none;
+  }
 }
