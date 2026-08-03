@@ -4,7 +4,9 @@ import { useState } from "react";
 import type { SocialAccount, SocialPlatform } from "@/lib/zernio";
 import AccountCard from "./AccountCard";
 import ActivityPanel from "./ActivityPanel";
+import AnalyticsPanel from "./AnalyticsPanel";
 import CalendarPanel from "./CalendarPanel";
+import CompetitorsPanel from "./CompetitorsPanel";
 import ComposePost from "./ComposePost";
 import ConnectAccountButton from "./ConnectAccountButton";
 import DashboardStats from "./DashboardStats";
@@ -13,7 +15,15 @@ import InboxPanel from "./InboxPanel";
 import SchedulerPanel from "./SchedulerPanel";
 import { PLATFORMS } from "./PlatformIcon";
 
-type Tab = "compose" | "feeds" | "activity" | "scheduler" | "inbox" | "calendar";
+type Tab =
+  | "compose"
+  | "feeds"
+  | "activity"
+  | "scheduler"
+  | "inbox"
+  | "calendar"
+  | "analytics"
+  | "competitors";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   {
@@ -67,6 +77,24 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z" />
+      </svg>
+    ),
+  },
+  {
+    id: "analytics",
+    label: "Analytics",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 19V5m16 14v-5m-8 5v-8m4 8V9M4 5a2 2 0 00-2 2m18-2a2 2 0 012 2" />
+      </svg>
+    ),
+  },
+  {
+    id: "competitors",
+    label: "Competitors",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 15l-2 5 3-1-1 4 5-5-3-1 2-5-4 3zm-9-2l-2 5 3-1-1 4 5-5-3-1 2-5-4 3zM9 5a3 3 0 11-6 0 3 3 0 016 0zm12 0a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
   },
@@ -161,6 +189,8 @@ export default function SocialDashboard({
           {tab === "feeds" && <FeedSection accounts={accounts} />}
           {tab === "activity" && <ActivityPanel accounts={accounts} />}
           {tab === "scheduler" && <SchedulerPanel accounts={accounts} />}
+          {tab === "analytics" && <AnalyticsPanel />}
+          {tab === "competitors" && <CompetitorsPanel />}
         </main>
       </div>
     </div>

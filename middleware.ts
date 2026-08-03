@@ -17,7 +17,8 @@ function isProtectedRoute(pathname: string) {
     pathname.startsWith("/content") ||
     pathname.startsWith("/profile") ||
     pathname.startsWith("/api/social") ||
-    pathname.startsWith("/api/ai")
+    pathname.startsWith("/api/ai") ||
+    pathname.startsWith("/api/reports")
   );
 }
 

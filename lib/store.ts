@@ -33,6 +33,7 @@ interface UserRecord {
   email: string;
   passwordHash: string;
   createdAt: string;
+  plan?: "free" | "pro" | "team";
 }
 
 interface SessionRecord {
@@ -57,10 +58,17 @@ export interface PublicUser {
   name: string;
   email: string;
   createdAt: string;
+  plan: "free" | "pro" | "team";
 }
 
 function toPublicUser(u: UserRecord): PublicUser {
-  return { id: u.id, name: u.name, email: u.email, createdAt: u.createdAt };
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    createdAt: u.createdAt,
+    plan: u.plan ?? "free",
+  };
 }
 
 export async function createUser(input: {
@@ -74,6 +82,7 @@ export async function createUser(input: {
     email: input.email,
     passwordHash: input.passwordHash,
     createdAt: new Date().toISOString(),
+    plan: "free",
   };
   await users().doc(user.id).set(user);
   return toPublicUser(user);
@@ -111,6 +120,16 @@ export async function updateUser(
   };
   await doc.set(updated);
   return toPublicUser(updated);
+}
+
+export async function setUserPlan(userId: string, plan: "free" | "pro" | "team") {
+  await users().doc(userId).update({ plan });
+}
+
+export async function getUserPlan(userId: string): Promise<"free" | "pro" | "team"> {
+  const snap = await users().doc(userId).get();
+  if (!snap.exists) return "free";
+  return ((snap.data() as UserRecord).plan as "free" | "pro" | "team") ?? "free";
 }
 
 /* ------------------------------- Sessions ------------------------------- */
@@ -175,4 +194,110 @@ export async function getProfileForUser(userId: string): Promise<string | null> 
 
 export async function setProfileForUser(userId: string, profileId: string) {
   await profiles().doc(userId).set({ userId, profileId });
+}
+
+/* ------------------------------ Competitors ----------------------------- */
+/* Manually tracked competitor accounts, stored per app user. Follower
+ * snapshots are collected by the UI calling /api/social/competitors when the
+ * user views the compare view. */
+
+export interface CompetitorRecord {
+  id: string;
+  userId: string;
+  platform: string;
+  username: string;
+  displayName?: string;
+  profileUrl?: string;
+  followerSnapshots: { date: string; followers: number }[];
+  createdAt: string;
+}
+
+const competitors = () => db().collection("competitors");
+
+/** Drop undefined values so Firestore accepts the document. */
+function compact<T extends object>(obj: T): T {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) out[k] = v;
+  }
+  return out as T;
+}
+
+export async function listCompetitors(userId: string): Promise<CompetitorRecord[]> {
+  const snap = await competitors().where("userId", "==", userId).get();
+  return snap.docs
+    .map((d) => d.data() as CompetitorRecord)
+    .sort((a, b) => a.username.localeCompare(b.username));
+}
+
+export async function getCompetitor(userId: string, id: string): Promise<CompetitorRecord | null> {
+  const snap = await competitors().doc(id).get();
+  if (!snap.exists) return null;
+  const rec = snap.data() as CompetitorRecord;
+  if (rec.userId !== userId) return null;
+  return rec;
+}
+
+export async function createCompetitor(
+  userId: string,
+  input: {
+    platform: string;
+    username: string;
+    displayName?: string;
+    profileUrl?: string;
+  }
+): Promise<CompetitorRecord> {
+  const id = randomUUID();
+  const rec: CompetitorRecord = {
+    id,
+    userId,
+    platform: input.platform,
+    username: input.username,
+    displayName: input.displayName,
+    profileUrl: input.profileUrl,
+    followerSnapshots: [],
+    createdAt: new Date().toISOString(),
+  };
+  await competitors().doc(id).set(compact(rec));
+  return rec;
+}
+
+export async function updateCompetitor(
+  userId: string,
+  id: string,
+  patch: Partial<Pick<CompetitorRecord, "platform" | "username" | "displayName" | "profileUrl">>
+): Promise<CompetitorRecord | null> {
+  const rec = await getCompetitor(userId, id);
+  if (!rec) return null;
+  const next = { ...rec, ...patch, followerSnapshots: rec.followerSnapshots };
+  await competitors().doc(id).set(compact(next));
+  return next;
+}
+
+export async function addCompetitorSnapshot(
+  userId: string,
+  id: string,
+  followers: number,
+  date = new Date().toISOString().slice(0, 10)
+): Promise<CompetitorRecord | null> {
+  const rec = await getCompetitor(userId, id);
+  if (!rec) return null;
+  const previous = rec.followerSnapshots.find((s) => s.date === date);
+  const next: CompetitorRecord = {
+    ...rec,
+    followerSnapshots: previous
+      ? rec.followerSnapshots.map((s) => (s.date === date ? { ...s, followers } : s))
+      : [...rec.followerSnapshots, { date, followers }].sort((a, b) =>
+          a.date.localeCompare(b.date)
+        ),
+  };
+  await competitors().doc(id).set(next);
+  return next;
+}
+
+export async function deleteCompetitor(userId: string, id: string): Promise<boolean> {
+  const rec = await getCompetitor(userId, id);
+  if (!rec) return false;
+  await competitors().doc(id).delete();
+  return true;
 }

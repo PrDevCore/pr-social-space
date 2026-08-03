@@ -670,3 +670,200 @@ export async function updatePost(
     { method: "PUT", body: JSON.stringify(patch) }
   );
 }
+
+/* ------------------------------ Analytics ------------------------------- */
+/* Post analytics, daily metrics, best-time and follower history. These need
+ * the Analytics add-on (Zernio returns 402 analytics_addon_required when it's
+ * missing). The /analytics list response also exposes `hasAnalyticsAccess`. */
+
+export interface PostAnalytics {
+  impressions?: number;
+  reach?: number;
+  likes?: number;
+  comments?: number;
+  shares?: number;
+  saves?: number;
+  clicks?: number;
+  views?: number;
+  engagementRate?: number;
+  follows?: number;
+  lastUpdated?: string;
+}
+
+export interface AnalyticsPost {
+  id: string;
+  content?: string;
+  status?: string;
+  publishedAt?: string;
+  scheduledFor?: string;
+  analytics?: PostAnalytics;
+  platform?: string;
+  platformPostUrl?: string;
+  isExternal?: boolean;
+  thumbnailUrl?: string;
+  profileId?: string;
+  platforms?: Array<{
+    platform: string;
+    accountId: string;
+    accountUsername?: string;
+    analytics?: PostAnalytics;
+    platformPostUrl?: string;
+    syncStatus?: string;
+  }>;
+}
+
+export interface AnalyticsOverview {
+  totalPosts?: number;
+  publishedPosts?: number;
+  scheduledPosts?: number;
+  lastSync?: string;
+}
+
+export interface DailyMetricsPoint {
+  date: string;
+  platforms?: Record<string, unknown>;
+  metrics?: PostAnalytics;
+}
+
+export interface PlatformBreakdown {
+  platform: string;
+  impressions?: number;
+  reach?: number;
+  likes?: number;
+  comments?: number;
+  shares?: number;
+  saves?: number;
+  views?: number;
+}
+
+export interface BestTimeSlot {
+  day_of_week: number; // 0=Monday .. 6=Sunday
+  hour: number; // UTC 0-23
+  avg_engagement: number;
+  post_count: number;
+}
+
+export interface FollowerPoint {
+  date: string;
+  followers: number;
+}
+
+export interface FollowerStats {
+  accounts: Array<{
+    id: string;
+    platform: string;
+    username?: string;
+    currentFollowers?: number;
+    growth?: number;
+    growthPercentage?: number;
+    dataPoints?: number;
+  }>;
+  stats: Record<string, FollowerPoint[]>;
+  dateRange?: { from?: string; to?: string };
+  granularity?: string;
+}
+
+export interface AnalyticsPayload {
+  overview?: AnalyticsOverview;
+  posts: AnalyticsPost[];
+  pagination?: { page?: number; limit?: number; total?: number; pages?: number };
+  accounts?: Array<{ id: string; platform: string; username?: string; displayName?: string }>;
+  hasAnalyticsAccess?: boolean;
+}
+
+/** GET /v1/analytics — paginated post analytics + overview + access flag. */
+export async function getAnalytics(
+  profileId: string,
+  opts: { from?: string; to?: string; limit?: number } = {}
+): Promise<AnalyticsPayload> {
+  const data = await zernioFetch<{
+    overview?: AnalyticsOverview;
+    posts?: AnalyticsPost[];
+    pagination?: AnalyticsPayload["pagination"];
+    accounts?: Array<{
+      _id: string;
+      platform: string;
+      username?: string;
+      displayName?: string;
+    }>;
+    hasAnalyticsAccess?: boolean;
+  }>(`/analytics?${qs({ profileId, fromDate: opts.from, toDate: opts.to, limit: opts.limit ?? 50 })}`);
+  return {
+    overview: data.overview,
+    posts: data.posts ?? [],
+    pagination: data.pagination,
+    accounts: (data.accounts ?? []).map((a) => ({
+      id: a._id,
+      platform: a.platform,
+      username: a.username,
+      displayName: a.displayName,
+    })),
+    hasAnalyticsAccess: data.hasAnalyticsAccess,
+  };
+}
+
+/** GET /v1/analytics/daily-metrics — daily totals + per-platform breakdown. */
+export async function getDailyMetrics(
+  profileId: string,
+  opts: { from?: string; to?: string } = {}
+): Promise<{ dailyData: DailyMetricsPoint[]; platformBreakdown: PlatformBreakdown[] }> {
+  return zernioFetch<{ dailyData: DailyMetricsPoint[]; platformBreakdown: PlatformBreakdown[] }>(
+    `/analytics/daily-metrics?${qs({ profileId, from: opts.from, to: opts.to })}`
+  );
+}
+
+/** GET /v1/analytics/best-time — 7×24 engagement slots (UTC). */
+export async function getBestTime(
+  profileId: string,
+  platform?: string
+): Promise<{ slots: BestTimeSlot[] }> {
+  return zernioFetch<{ slots: BestTimeSlot[] }>(
+    `/analytics/best-time?${qs({ profileId, platform })}`
+  );
+}
+
+/** GET /v1/accounts/follower-stats — follower history per account. */
+export async function getFollowerStats(
+  opts: {
+    profileId?: string;
+    accountIds?: string[];
+    from?: string;
+    to?: string;
+  } = {}
+): Promise<FollowerStats> {
+  const data = await zernioFetch<{
+    accounts?: Array<{
+      _id: string;
+      platform: string;
+      username?: string;
+      currentFollowers?: number;
+      growth?: number;
+      growthPercentage?: number;
+      dataPoints?: number;
+    }>;
+    stats?: Record<string, FollowerPoint[]>;
+    dateRange?: { from?: string; to?: string };
+    granularity?: string;
+  }>(
+    `/accounts/follower-stats?${qs({
+      profileId: opts.profileId,
+      accountIds: opts.accountIds?.join(","),
+      fromDate: opts.from,
+      toDate: opts.to,
+    })}`
+  );
+  return {
+    accounts: (data.accounts ?? []).map((a) => ({
+      id: a._id,
+      platform: a.platform,
+      username: a.username,
+      currentFollowers: a.currentFollowers,
+      growth: a.growth,
+      growthPercentage: a.growthPercentage,
+      dataPoints: a.dataPoints,
+    })),
+    stats: data.stats ?? {},
+    dateRange: data.dateRange,
+    granularity: data.granularity,
+  };
+}

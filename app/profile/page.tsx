@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 import { getCurrentUser } from "@/lib/auth";
 import ProfileForm from "@/components/ProfileForm";
+import PlanCard from "@/components/PlanCard";
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -48,6 +49,13 @@ export default async function ProfilePage() {
               Edit details
             </h2>
             <ProfileForm name={user.name} />
+          </div>
+
+          <div>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-black/50">
+              Billing
+            </h2>
+            <PlanCard />
           </div>
 
           <div className="card">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createPost, ensureProfileForUser, listAccounts } from "@/lib/zernio";
 import { listPostsForUser, recordPost } from "@/lib/store";
+import { checkPostLimit } from "@/lib/plan-usage";
 
 // GET /api/social/posts — this user's post history from our own backend.
 export async function GET() {
@@ -37,6 +38,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Plan cap: Free users may publish up to their plan's monthly post limit.
+    const postLimit = await checkPostLimit(user.id);
+    if (!postLimit.ok) {
+      return NextResponse.json(
+        {
+          error: postLimit.error,
+          code: "plan_limit_reached",
+          plan: postLimit.plan.id,
+        },
+        { status: 403 }
+      );
+    }
+
     const profileId = await ensureProfileForUser(user.id);
     // Ownership check: only allow posting to accounts this user connected.
     const ownedAccounts = await listAccounts(profileId);
