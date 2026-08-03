@@ -220,6 +220,8 @@ export interface CreatePostParams {
   targets: Array<{ accountId: string; platform: SocialPlatform }>;
   mediaUrls?: string[];
   scheduledAt?: string; // ISO 8601, omit to publish immediately
+  /** Hashtags to publish alongside the post (without the leading #). */
+  hashtags?: string[];
 }
 
 /** POST /v1/posts — publish (or schedule) content to one or more accounts. */
@@ -238,6 +240,9 @@ export async function createPost(params: CreatePostParams) {
       type: guessMediaType(url),
       url,
     }));
+  }
+  if (params.hashtags?.length) {
+    body.hashtags = params.hashtags;
   }
   if (params.scheduledAt) {
     body.scheduledFor = params.scheduledAt;
@@ -427,4 +432,241 @@ export async function listInstagramStories(
     thumbnailUrl: s.thumbnailUrl,
     timestamp: s.timestamp,
   }));
+}
+
+/* -------------------------------- Inbox --------------------------------- */
+/*
+ * Unified inbox (comments, DMs, mentions). Every endpoint requires the inbox
+ * add-on; Zernio returns 403 "Inbox addon required" when it's not present.
+ * Callers should surface a friendly empty/upsell state on 403.
+ */
+
+export interface InboxCommentSummary {
+  id: string;
+  platform: string;
+  accountId: string;
+  accountUsername?: string;
+  content?: string;
+  picture?: string | null;
+  permalink?: string | null;
+  createdTime?: string;
+  commentCount: number;
+  likeCount?: number;
+  isAd?: boolean;
+  adId?: string;
+  placement?: string;
+}
+
+export interface InboxCommentAuthor {
+  id: string;
+  name: string;
+  username?: string;
+  picture?: string | null;
+  isOwner?: boolean;
+  verifiedType?: string | null;
+}
+
+export interface InboxComment {
+  id: string;
+  message: string;
+  createdTime?: string;
+  from?: InboxCommentAuthor;
+  likeCount?: number;
+  replyCount?: number;
+  platform?: string;
+  url?: string | null;
+  canReply?: boolean;
+  canDelete?: boolean;
+  canHide?: boolean;
+  canLike?: boolean;
+  isHidden?: boolean;
+  isLiked?: boolean;
+  cid?: string | null;
+  parentId?: string | null;
+}
+
+export interface InboxConversation {
+  id: string;
+  platform: string;
+  accountId: string;
+  accountUsername?: string;
+  participantName?: string;
+  lastMessage?: string;
+  unreadCount?: number | null;
+  url?: string | null;
+}
+
+export interface InboxMention {
+  id: string;
+  platform: string;
+  accountId: string;
+  accountUsername?: string;
+  text?: string;
+  url?: string | null;
+  authorName?: string | null;
+  authorUsername?: string | null;
+  authorAvatar?: string | null;
+}
+
+interface Paginated<T> {
+  data: T[];
+  pagination?: { hasMore?: boolean; nextCursor?: string | null; cursor?: string | null };
+  meta?: Record<string, unknown>;
+}
+
+function qs(params: Record<string, string | number | undefined>) {
+  const out = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== "" && v !== null) out.set(k, String(v));
+  }
+  return out.toString();
+}
+
+/** GET /v1/inbox/comments — posts with comment counts across all accounts. */
+export async function listInboxComments(
+  profileId: string,
+  limit = 25
+): Promise<Paginated<InboxCommentSummary>> {
+  return zernioFetch<Paginated<InboxCommentSummary>>(
+    `/inbox/comments?${qs({ profileId, limit })}`
+  );
+}
+
+/** GET /v1/inbox/comments/{postId} — the actual comments on one post. */
+export async function getInboxPostComments(
+  postId: string,
+  accountId: string
+): Promise<{ comments: InboxComment[]; post?: Record<string, unknown> | null; meta?: Record<string, unknown> }> {
+  return zernioFetch<{
+    comments: InboxComment[];
+    post?: Record<string, unknown> | null;
+    meta?: Record<string, unknown>;
+  }>(`/inbox/comments/${encodeURIComponent(postId)}?${qs({ accountId })}`);
+}
+
+/** POST /v1/inbox/comments/{postId} — reply to a post or a specific comment. */
+export async function replyToComment(
+  postId: string,
+  params: { accountId: string; message: string; commentId?: string }
+) {
+  return zernioFetch<{ success: boolean; data: { commentId: string; isReply: boolean } }>(
+    `/inbox/comments/${encodeURIComponent(postId)}`,
+    { method: "POST", body: JSON.stringify(params) }
+  );
+}
+
+/** POST /v1/inbox/comments/{postId}/{commentId}/like */
+export async function likeComment(postId: string, commentId: string, accountId: string) {
+  return zernioFetch<{ status: string; commentId: string; liked: boolean; platform: string }>(
+    `/inbox/comments/${encodeURIComponent(postId)}/${encodeURIComponent(commentId)}/like`,
+    { method: "POST", body: JSON.stringify({ accountId }) }
+  );
+}
+
+/** POST /v1/inbox/comments/{postId}/{commentId}/hide */
+export async function hideComment(postId: string, commentId: string, accountId: string) {
+  return zernioFetch<{ status: string; commentId: string; hidden: boolean }>(
+    `/inbox/comments/${encodeURIComponent(postId)}/${encodeURIComponent(commentId)}/hide`,
+    { method: "POST", body: JSON.stringify({ accountId }) }
+  );
+}
+
+/** POST /v1/inbox/comments/{postId}/{commentId}/private-reply */
+export async function privateReplyComment(
+  postId: string,
+  commentId: string,
+  params: { accountId: string; message: string }
+) {
+  return zernioFetch<{ success?: boolean }>(
+    `/inbox/comments/${encodeURIComponent(postId)}/${encodeURIComponent(commentId)}/private-reply`,
+    { method: "POST", body: JSON.stringify(params) }
+  );
+}
+
+/** GET /v1/inbox/conversations — DM threads across all connected accounts. */
+export async function listInboxConversations(
+  profileId: string,
+  limit = 25
+): Promise<Paginated<InboxConversation>> {
+  return zernioFetch<Paginated<InboxConversation>>(
+    `/inbox/conversations?${qs({ profileId, limit })}`
+  );
+}
+
+/** POST /v1/inbox/conversations/{conversationId}/messages — send a DM. */
+export async function sendDmMessage(
+  conversationId: string,
+  params: { accountId: string; message: string }
+) {
+  return zernioFetch<{ success?: boolean; data?: Record<string, unknown> }>(
+    `/inbox/conversations/${encodeURIComponent(conversationId)}/messages`,
+    { method: "POST", body: JSON.stringify(params) }
+  );
+}
+
+/** GET /v1/inbox/mentions — mentions of the user's org accounts. */
+export async function listInboxMentions(
+  profileId: string,
+  limit = 25
+): Promise<Paginated<InboxMention>> {
+  return zernioFetch<Paginated<InboxMention>>(
+    `/inbox/mentions?${qs({ profileId, limit })}`
+  );
+}
+
+/** POST /v1/inbox/mentions/reply — reply to a mention (Instagram). */
+export async function replyToMention(
+  params: { accountId: string; mediaId: string; message: string }
+) {
+  return zernioFetch<{ success?: boolean; data?: Record<string, unknown> }>(
+    `/inbox/mentions/reply`,
+    { method: "POST", body: JSON.stringify(params) }
+  );
+}
+
+/* -------------------------------- Calendar ------------------------------ */
+/* Visual content calendar: queue slots + rescheduling scheduled posts. */
+
+export interface QueueSlot {
+  dayOfWeek: number; // 0=Monday .. 6=Sunday
+  time: string; // "HH:mm"
+}
+
+export interface QueueSchedule {
+  id?: string;
+  name?: string;
+  slots?: QueueSlot[];
+  timezone?: string;
+}
+
+/** GET /v1/queue/slots — the profile's posting-queue schedules. */
+export async function getQueueSlots(profileId: string): Promise<QueueSchedule[]> {
+  const res = await zernioFetch<{
+    slots?: QueueSlot[];
+    queues?: QueueSchedule[];
+  }>(`/queue/slots?${qs({ profileId })}`);
+  if (Array.isArray(res.queues)) return res.queues;
+  if (Array.isArray(res.slots)) return [{ id: undefined, name: "Default", slots: res.slots }];
+  return [];
+}
+
+/** GET /v1/queue/next-slot — next available queue slot (preview). */
+export async function getNextQueueSlot(profileId: string): Promise<{
+  scheduledFor?: string;
+  timezone?: string;
+}> {
+  return zernioFetch<{ scheduledFor?: string; timezone?: string }>(
+    `/queue/next-slot?${qs({ profileId })}`
+  );
+}
+
+/** PUT /v1/posts/{postId} — update a scheduled post (reschedule). */
+export async function updatePost(
+  postId: string,
+  patch: { scheduledFor?: string; timezone?: string }
+) {
+  return zernioFetch<{ post?: Record<string, unknown>; message?: string }>(
+    `/posts/${postId}`,
+    { method: "PUT", body: JSON.stringify(patch) }
+  );
 }

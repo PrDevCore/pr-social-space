@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     socialAccountIds?: string[];
     mediaUrls?: string[];
     scheduledAt?: string;
+    hashtags?: string[];
   };
 
   if (!body.caption || !body.socialAccountIds?.length) {
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
       })),
       mediaUrls: body.mediaUrls,
       scheduledAt: body.scheduledAt,
+      hashtags: body.hashtags,
     });
 
     await recordPost({

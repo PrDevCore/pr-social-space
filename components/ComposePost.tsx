@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { SocialAccount } from "@/lib/zernio";
 import { PlatformBadge } from "./PlatformIcon";
+import AIAssistant from "./AIAssistant";
 import PostPreview from "./PostPreview";
 
 function fileName(url: string) {
@@ -11,6 +12,12 @@ function fileName(url: string) {
   } catch {
     return url;
   }
+}
+
+/** Pull #hashtags out of a caption for the dedicated post field. */
+function extractHashtags(caption: string): string[] {
+  const tags = caption.match(/#[\p{L}\p{N}_]+/gu) ?? [];
+  return Array.from(new Set(tags.map((t) => t.replace(/^#/, ""))));
 }
 
 export default function ComposePost({ accounts }: { accounts: SocialAccount[] }) {
@@ -120,6 +127,7 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
 
     setSubmitting(true);
     setResult(null);
+    const hashtags = extractHashtags(caption);
     try {
       const res = await fetch("/api/social/posts", {
         method: "POST",
@@ -129,6 +137,7 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
           socialAccountIds: selected,
           mediaUrls: mediaUrls.length ? mediaUrls : undefined,
           scheduledAt: scheduleAt ? new Date(scheduleAt).toISOString() : undefined,
+          hashtags: hashtags.length ? hashtags : undefined,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -185,6 +194,13 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
           placeholder="What do you want to say?"
           className="w-full rounded-xl border border-black/10 p-3 text-sm outline-none focus:border-accent"
         />
+        <div className="mt-2">
+          <AIAssistant
+            caption={caption}
+            setCaption={setCaption}
+            platform={selectedAccounts[0]?.platform ?? "instagram"}
+          />
+        </div>
         {aiError && <p className="mt-1 text-xs text-red-600">{aiError}</p>}
       </div>
 

@@ -190,3 +190,99 @@ export async function generateCaption(input: CaptionInput): Promise<string> {
   if (!text) throw new Error("Gemini returned an empty response.");
   return text;
 }
+
+/* --------------------------- Text-only helpers --------------------------- */
+
+async function runTextGeneration(
+  prompt: string,
+  opts: { temperature?: number; maxOutputTokens?: number } = {}
+): Promise<string> {
+  if (!API_KEY) {
+    throw new Error(
+      "GEMINI_API_KEY is not set. Add it to your environment to use AI writing features."
+    );
+  }
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": API_KEY,
+    },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: opts.temperature ?? 0.9,
+        maxOutputTokens: opts.maxOutputTokens ?? 512,
+      },
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Gemini API error ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts
+    ?.map((p: { text?: string }) => p.text ?? "")
+    .join("")
+    .trim();
+  if (!text) throw new Error("Gemini returned an empty response.");
+  return text;
+}
+
+/**
+ * Generate hashtags for a post. Returns the tags WITHOUT the leading "#"
+ * so the UI can render/insert them however it likes.
+ */
+export async function generateHashtags(
+  content: string,
+  count = 8
+): Promise<string[]> {
+  const prompt = [
+    "You are a social media hashtag strategist.",
+    `Given this post text, return exactly ${count} relevant hashtags for reach on social platforms.`,
+    "Rules:",
+    "- Mix broad and niche tags; no spaces or symbols except letters/numbers.",
+    "- Do NOT include the leading # character.",
+    "- Return ONLY the tags, one per line. No bullets, no commentary, no numbering.",
+    "",
+    `Post: ${content.slice(0, 2000)}`,
+  ].join("\n");
+
+  const raw = await runTextGeneration(prompt, { temperature: 0.8, maxOutputTokens: 160 });
+  const tags = raw
+    .split(/[\n,]+/)
+    .map((t) => t.trim().replace(/^#/, "").replace(/[^\p{L}\p{N}_]/gu, ""))
+    .filter((t) => t.length > 0)
+    .slice(0, count);
+  return tags;
+}
+
+export type ToneId = "casual" | "professional" | "playful";
+
+/**
+ * Rewrite existing text in a new tone, optimized for a specific platform.
+ * Returns a ready-to-paste replacement caption.
+ */
+export async function adjustTone(
+  text: string,
+  platform: string,
+  tone: ToneId
+): Promise<string> {
+  const toneGuide: Record<ToneId, string> = {
+    casual: "friendly, conversational, uses contractions, feels like a DM from a friend",
+    professional: "polished, confident, jargon-free, suitable for a corporate audience",
+    playful: "fun, energetic, light-hearted, uses emojis sparingly and punchy phrasing",
+  };
+  const prompt = [
+    "You are a social media copywriter.",
+    `Rewrite the following post in a ${tone} tone (${toneGuide[tone]}) for ${platform}.`,
+    "Rules:",
+    "- Keep the core message and facts intact.",
+    "- Match the platform's conventions (character limits, formatting, hashtag style).",
+    "- Return ONLY the rewritten post text. No quotes, no prefixes, no commentary.",
+    "",
+    `Post: ${text.slice(0, 2000)}`,
+  ].join("\n");
+
+  return runTextGeneration(prompt, { temperature: 0.8, maxOutputTokens: 512 });
+}

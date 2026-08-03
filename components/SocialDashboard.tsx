@@ -4,14 +4,16 @@ import { useState } from "react";
 import type { SocialAccount, SocialPlatform } from "@/lib/zernio";
 import AccountCard from "./AccountCard";
 import ActivityPanel from "./ActivityPanel";
+import CalendarPanel from "./CalendarPanel";
 import ComposePost from "./ComposePost";
 import ConnectAccountButton from "./ConnectAccountButton";
 import DashboardStats from "./DashboardStats";
 import FeedSection from "./FeedSection";
+import InboxPanel from "./InboxPanel";
 import SchedulerPanel from "./SchedulerPanel";
 import { PLATFORMS } from "./PlatformIcon";
 
-type Tab = "compose" | "feeds" | "activity" | "scheduler";
+type Tab = "compose" | "feeds" | "activity" | "scheduler" | "inbox" | "calendar";
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   {
@@ -20,6 +22,24 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+      </svg>
+    ),
+  },
+  {
+    id: "inbox",
+    label: "Inbox",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-4l-2 2h-4l-2-2H4" />
+      </svg>
+    ),
+  },
+  {
+    id: "calendar",
+    label: "Calendar",
+    icon: (
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z" />
       </svg>
     ),
   },
@@ -136,6 +156,8 @@ export default function SocialDashboard({
           </nav>
 
           {tab === "compose" && <ComposePost accounts={accounts} />}
+          {tab === "inbox" && <InboxPanel />}
+          {tab === "calendar" && <CalendarPanel />}
           {tab === "feeds" && <FeedSection accounts={accounts} />}
           {tab === "activity" && <ActivityPanel accounts={accounts} />}
           {tab === "scheduler" && <SchedulerPanel accounts={accounts} />}
