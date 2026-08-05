@@ -8,7 +8,7 @@ type ToneId = "casual" | "professional" | "playful";
  * AI writing assistant, embedded in the composer's caption area.
  * - Hashtags: generates a chip list; clicking a chip appends it to the caption.
  * - Tone: rewrites the current caption for the active platform.
- * Uses the existing /api/ai/write route (server-side Gemini, key never
+ * Uses the existing /api/ai/write route (server-side Groq, key never
  * reaches the browser).
  */
 export default function AIAssistant({
@@ -43,7 +43,7 @@ export default function AIAssistant({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Failed to generate hashtags");
       setHashtags(data.hashtags ?? []);
-      if (!data.hashtags?.length) setHsError("Gemini returned no hashtags.");
+      if (!data.hashtags?.length) setHsError("AI returned no hashtags.");
     } catch (err) {
       setHsError(err instanceof Error ? err.message : "Failed to generate hashtags");
     } finally {

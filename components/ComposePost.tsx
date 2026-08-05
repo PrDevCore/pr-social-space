@@ -175,7 +175,7 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
             onClick={handleGenerateCaption}
             disabled={aiLoading || mediaUrls.length === 0}
             className="inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/5 px-2.5 py-1 text-xs font-medium text-accent transition hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
-            title="Write a caption for your media with Gemini AI"
+            title="Write a caption with AI"
           >
             {aiLoading ? (
               <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-accent border-t-transparent" />

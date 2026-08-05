@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { generateCaption } from "@/lib/gemini";
+import { generateCaption } from "@/lib/groq";
 
-// Allow longer serverless execution for large media downloads and the
-// Files API fallback for big videos.
-export const maxDuration = 300;
+export const maxDuration = 60;
 
-// POST /api/ai/caption { mediaUrl?, context? }
-// Generates an appropriate caption for the media using Gemini. The image/video
-// is fetched server-side (from a Zernio publicUrl or any public URL). Images
-// and small videos (<=15 MB) go inline as base64; larger videos use the Gemini
-// Files API. The GEMINI_API_KEY never reaches the browser.
+// POST /api/ai/caption { context? }
+// Generates a caption using Groq AI. The context describes the post content.
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
@@ -24,65 +19,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
+  // Determine media type from URL extension for better captions
   const mediaUrl = body.mediaUrl?.trim();
-  if (!mediaUrl) {
-    return NextResponse.json(
-      { error: "mediaUrl is required." },
-      { status: 400 }
-    );
-  }
-
-  let image: { mimeType: string; data: string } | undefined;
-  let video: { mimeType: string; data: Buffer } | undefined;
-
-  try {
-    const mediaRes = await fetch(mediaUrl, { cache: "no-store" });
-    if (!mediaRes.ok) {
-      return NextResponse.json(
-        { error: "Couldn't fetch the media for analysis." },
-        { status: 422 }
-      );
+  let mediaType = "post";
+  if (mediaUrl) {
+    const ext = mediaUrl.split(".").pop()?.toLowerCase() ?? "";
+    if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)) {
+      mediaType = "image";
+    } else if (["mp4", "mov", "avi", "webm", "mkv"].includes(ext)) {
+      mediaType = "video";
     }
-    const buf = Buffer.from(await mediaRes.arrayBuffer());
-    const mime =
-      mediaRes.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() ??
-      "";
-
-    if (mime.startsWith("image/")) {
-      if (buf.length > 8_000_000) {
-        return NextResponse.json(
-          { error: "Image is too large for caption generation." },
-          { status: 413 }
-        );
-      }
-      image = { mimeType: mime, data: buf.toString("base64") };
-    } else if (mime.startsWith("video/")) {
-      if (buf.length > 100_000_000) {
-        return NextResponse.json(
-          { error: "Video is too large (max 100 MB)." },
-          { status: 413 }
-        );
-      }
-      video = { mimeType: mime, data: buf };
-    } else {
-      return NextResponse.json(
-        { error: "AI captions work with images or videos." },
-        { status: 422 }
-      );
-    }
-  } catch (err) {
-    console.error("fetch media for AI:", err);
-    return NextResponse.json(
-      { error: "Couldn't read the media for analysis." },
-      { status: 502 }
-    );
   }
 
   try {
-    const caption = await generateCaption({ image, video, context: body.context });
+    const caption = await generateCaption({
+      mediaType,
+      context: body.context,
+    });
     return NextResponse.json({ caption });
   } catch (err) {
-    console.error("gemini caption:", err);
+    console.error("groq caption:", err);
     const message =
       err instanceof Error ? err.message : "Failed to generate a caption.";
     return NextResponse.json(
