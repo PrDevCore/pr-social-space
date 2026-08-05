@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useDeferredValue, memo } from "react";
 import type { SocialAccount, SocialPlatform } from "@/lib/zernio";
 import { PLATFORMS } from "./PlatformIcon";
 
@@ -536,9 +536,11 @@ export default function PostPreview({
   );
   const current = accounts.find((a) => a.platform === active) ?? accounts[0];
 
+  const deferredCaption = useDeferredValue(caption);
+
   const limit = active ? LIMITS[active] : undefined;
-  const overLimit = typeof limit === "number" && caption.length > limit;
-  const within = caption.length > 0 && !overLimit && caption.trim().length > 0;
+  const overLimit = typeof limit === "number" && deferredCaption.length > limit;
+  const within = deferredCaption.length > 0 && !overLimit && deferredCaption.trim().length > 0;
 
   if (accounts.length === 0) {
     return (
@@ -553,36 +555,36 @@ export default function PostPreview({
 
   const render =
     active === "instagram" ? (
-      <InstagramPreview caption={caption} mediaUrls={mediaUrls} account={current} />
+      <InstagramPreview caption={deferredCaption} mediaUrls={mediaUrls} account={current} />
     ) : active === "twitter" ? (
-      <TwitterPreview caption={caption} mediaUrls={mediaUrls} account={current} />
+      <TwitterPreview caption={deferredCaption} mediaUrls={mediaUrls} account={current} />
     ) : active === "facebook" ? (
-      <FacebookPreview caption={caption} mediaUrls={mediaUrls} account={current} />
+      <FacebookPreview caption={deferredCaption} mediaUrls={mediaUrls} account={current} />
     ) : active === "linkedin" ? (
-      <LinkedInPreview caption={caption} mediaUrls={mediaUrls} account={current} />
+      <LinkedInPreview caption={deferredCaption} mediaUrls={mediaUrls} account={current} />
     ) : active === "youtube" ? (
-      <YouTubePreview caption={caption} mediaUrls={mediaUrls} account={current} />
+      <YouTubePreview caption={deferredCaption} mediaUrls={mediaUrls} account={current} />
     ) : active === "tiktok" ? (
-      <TikTokPreview caption={caption} mediaUrls={mediaUrls} account={current} />
+      <TikTokPreview caption={deferredCaption} mediaUrls={mediaUrls} account={current} />
     ) : (
-      <GenericPreview caption={caption} mediaUrls={mediaUrls} account={current} />
+      <GenericPreview caption={deferredCaption} mediaUrls={mediaUrls} account={current} />
     );
 
   return (
     <div className="space-y-3 lg:sticky lg:top-6 lg:self-start">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold">Live preview</p>
-        {typeof limit === "number" && (
+{typeof limit === "number" && (
           <span
             className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
               overLimit
                 ? "bg-red-50 text-red-600"
                 : within
-                  ? "bg-green-50 text-green-700"
-                  : "bg-black/5 text-black/50"
+                ? "bg-green-50 text-green-700"
+                : "bg-black/5 text-black/50"
             }`}
           >
-            {caption.length}/{limit}
+            {deferredCaption.length}/{limit}
           </span>
         )}
       </div>
