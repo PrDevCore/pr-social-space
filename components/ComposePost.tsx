@@ -29,6 +29,7 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
   const [selected, setSelected] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [contentType, setContentType] = useState<"feed" | "story">("feed");
 
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -138,6 +139,7 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
           mediaUrls: mediaUrls.length ? mediaUrls : undefined,
           scheduledAt: scheduleAt ? new Date(scheduleAt).toISOString() : undefined,
           hashtags: hashtags.length ? hashtags : undefined,
+          contentType,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -307,6 +309,39 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
             </button>
           ))}
         </div>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium">Post type</label>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setContentType("feed")}
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              contentType === "feed"
+                ? "border-accent bg-accent/10 text-accent"
+                : "border-black/10 bg-white text-black/60 hover:bg-black/5"
+            }`}
+          >
+            Feed post
+          </button>
+          <button
+            type="button"
+            onClick={() => setContentType("story")}
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              contentType === "story"
+                ? "border-accent bg-accent/10 text-accent"
+                : "border-black/10 bg-white text-black/60 hover:bg-black/5"
+            }`}
+          >
+            Story / Reel
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-black/40">
+          {contentType === "feed"
+            ? "Images auto-crop to 4:5 for Instagram. Videos post as feed."
+            : "Posts as a 9:16 Story or Reel."}
+        </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

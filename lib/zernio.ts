@@ -222,6 +222,8 @@ export interface CreatePostParams {
   scheduledAt?: string; // ISO 8601, omit to publish immediately
   /** Hashtags to publish alongside the post (without the leading #). */
   hashtags?: string[];
+  /** "feed" for regular posts, "story" for Instagram Stories/Reels. */
+  contentType?: "feed" | "story";
 }
 
 /** POST /v1/posts — publish (or schedule) content to one or more accounts. */
@@ -232,6 +234,9 @@ export async function createPost(params: CreatePostParams) {
     platforms: params.targets.map((t) => ({
       platform: t.platform,
       accountId: t.accountId,
+      ...(params.contentType === "story"
+        ? { platformSpecificData: { contentType: "story" } }
+        : {}),
     })),
   };
 

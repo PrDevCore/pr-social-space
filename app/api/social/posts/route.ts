@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { createPost, ensureProfileForUser, listAccounts } from "@/lib/zernio";
+import { createPost, ensureProfileForUser, listAccounts, presignMedia } from "@/lib/zernio";
 import { listPostsForUser, recordPost } from "@/lib/store";
 import { checkPostLimit } from "@/lib/plan-usage";
+import { autoCropForInstagram, needsInstagramCrop, type ContentType } from "@/lib/image-utils";
 
 // GET /api/social/posts — this user's post history from our own backend.
 export async function GET() {
@@ -15,7 +16,7 @@ export async function GET() {
   return NextResponse.json({ posts });
 }
 
-// POST /api/social/posts { caption, socialAccountIds, mediaUrls?, scheduledAt? }
+// POST /api/social/posts { caption, socialAccountIds, mediaUrls?, scheduledAt?, contentType? }
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) {
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
     mediaUrls?: string[];
     scheduledAt?: string;
     hashtags?: string[];
+    contentType?: ContentType;
   };
 
   if (!body.caption || !body.socialAccountIds?.length) {
@@ -36,6 +38,8 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  const contentType = body.contentType ?? "feed";
 
   try {
     // Plan cap: Free users may publish up to their plan's monthly post limit.
@@ -63,6 +67,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Auto-crop images for Instagram feed if they don't fit aspect ratio
+    const processedMediaUrls: string[] = [];
+    for (const url of body.mediaUrls ?? []) {
+      const isImage = /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(url);
+      if (isImage && contentType === "feed") {
+        try {
+          const imgRes = await fetch(url, { cache: "no-store" });
+          if (imgRes.ok) {
+            const imgBuf = Buffer.from(await imgRes.arrayBuffer());
+            const mime = imgRes.headers.get("content-type")?.split(";")[0]?.trim() ?? "image/jpeg";
+
+            // Check dimensions using sharp metadata
+            const sharp = (await import("sharp")).default;
+            const meta = await sharp(imgBuf).metadata();
+            if (meta.width && meta.height && needsInstagramCrop(meta.width, meta.height, "feed")) {
+              // Auto-crop to 4:5
+              const { buffer, contentType: outMime } = await autoCropForInstagram(imgBuf, mime, "feed");
+              // Re-upload cropped image to Zernio
+              const ext = outMime === "image/png" ? "png" : "jpg";
+              const { uploadUrl, publicUrl } = await presignMedia({
+                filename: `cropped-${Date.now()}.${ext}`,
+                contentType: outMime,
+              });
+              await fetch(uploadUrl, {
+                method: "PUT",
+                headers: { "Content-Type": outMime },
+                body: new Uint8Array(buffer),
+              });
+              processedMediaUrls.push(publicUrl);
+              continue;
+            }
+          }
+        } catch (cropErr) {
+          console.warn("Auto-crop failed, using original:", cropErr);
+        }
+      }
+      processedMediaUrls.push(url);
+    }
+
     const result = await createPost({
       content: body.caption,
       profileId,
@@ -70,9 +113,10 @@ export async function POST(req: NextRequest) {
         accountId: id,
         platform: ownedById.get(id)!.platform,
       })),
-      mediaUrls: body.mediaUrls,
+      mediaUrls: processedMediaUrls.length ? processedMediaUrls : body.mediaUrls,
       scheduledAt: body.scheduledAt,
       hashtags: body.hashtags,
+      contentType,
     });
 
     await recordPost({
