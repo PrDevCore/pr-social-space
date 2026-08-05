@@ -165,7 +165,7 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="space-y-6">
       <form onSubmit={handleSubmit} className="card space-y-4">
       <div>
         <div className="mb-1 flex items-center justify-between gap-2">
