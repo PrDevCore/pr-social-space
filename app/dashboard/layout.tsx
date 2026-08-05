@@ -11,7 +11,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen">
       <header className="border-b border-black/10 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link
             href="/dashboard"
             className="flex items-center gap-2 font-semibold tracking-tight"
@@ -48,7 +48,7 @@ export default function DashboardLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
+      <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
     </div>
   );
 }

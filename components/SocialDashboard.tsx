@@ -2,17 +2,16 @@
 
 import { useState } from "react";
 import type { SocialAccount, SocialPlatform } from "@/lib/zernio";
-import AccountCard from "./AccountCard";
 import ActivityPanel from "./ActivityPanel";
 import AnalyticsPanel from "./AnalyticsPanel";
 import CalendarPanel from "./CalendarPanel";
 import CompetitorsPanel from "./CompetitorsPanel";
 import ComposePost from "./ComposePost";
-import ConnectAccountButton from "./ConnectAccountButton";
 import DashboardStats from "./DashboardStats";
 import FeedSection from "./FeedSection";
 import InboxPanel from "./InboxPanel";
 import SchedulerPanel from "./SchedulerPanel";
+import SideTray, { TrayPanel } from "./SideTray";
 import { PLATFORMS } from "./PlatformIcon";
 
 type Tab =
@@ -107,71 +106,48 @@ export default function SocialDashboard({
 }) {
   const [accounts, setAccounts] = useState(initialAccounts);
   const [tab, setTab] = useState<Tab>("compose");
+  const [trayOpen, setTrayOpen] = useState(false);
   const connectedPlatforms = new Set(accounts.map((a) => a.platform));
-  const unconnected = PLATFORMS.filter((p) => !connectedPlatforms.has(p.id));
+  const unconnected: SocialPlatform[] = PLATFORMS.filter(
+    (p) => !connectedPlatforms.has(p.id)
+  ).map((p) => p.id);
+
+  const onDisconnected = (id: string) =>
+    setAccounts((prev) => prev.filter((x) => x.id !== id));
 
   return (
     <div className="space-y-6">
       <DashboardStats accounts={accounts} />
 
-      <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-        {/* Sidebar: connected accounts + connect */}
-        <aside className="space-y-6">
-          <div className="card">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-black/50">
-                Connected
-              </h2>
-              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-semibold text-accent">
-                {accounts.length}
-              </span>
-            </div>
-
-            {accounts.length > 0 ? (
-              <div className="space-y-2">
-                {accounts.map((a) => (
-                  <AccountCard
-                    key={a.id}
-                    account={a}
-                    onDisconnected={(id) =>
-                      setAccounts((prev) => prev.filter((x) => x.id !== id))
-                    }
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-black/15 bg-black/[0.02] p-4 text-center text-sm text-black/50">
-                No accounts connected yet.
-              </div>
-            )}
-          </div>
-
-          {unconnected.length > 0 && (
-            <div className="card">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-black/50">
-                Connect a platform
-              </h2>
-              <div className="flex flex-col gap-2">
-                {unconnected.map((p) => (
-                  <ConnectAccountButton
-                    key={p.id}
-                    platform={p.id as SocialPlatform}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </aside>
+      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_320px]">
+        {/* Vertical navigation */}
+        <nav className="hidden self-start rounded-2xl border border-black/10 bg-white p-2 lg:sticky lg:top-6 lg:flex lg:flex-col lg:gap-1">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              aria-selected={tab === t.id}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                tab === t.id
+                  ? "bg-ink text-white shadow-sm"
+                  : "text-black/60 hover:bg-black/5 hover:text-black"
+              }`}
+            >
+              {t.icon}
+              {t.label}
+            </button>
+          ))}
+        </nav>
 
         {/* Main workspace */}
         <main className="min-w-0">
-          <nav className="mb-4 flex gap-1 rounded-xl border border-black/10 bg-white p-1">
+          <nav className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-black/10 bg-white p-1 lg:hidden">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 aria-selected={tab === t.id}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
                   tab === t.id
                     ? "bg-ink text-white shadow-sm"
                     : "text-black/60 hover:bg-black/5 hover:text-black"
@@ -192,7 +168,37 @@ export default function SocialDashboard({
           {tab === "analytics" && <AnalyticsPanel />}
           {tab === "competitors" && <CompetitorsPanel />}
         </main>
+
+        {/* Persistent tray column (xl+) */}
+        <div className="hidden xl:block">
+          <div className="sticky top-6">
+            <TrayPanel
+              accounts={accounts}
+              onDisconnected={onDisconnected}
+              unconnected={unconnected}
+            />
+          </div>
+        </div>
       </div>
+
+      {/* Slide-over tray toggle (below xl) */}
+      <button
+        onClick={() => setTrayOpen(true)}
+        aria-label="Open side tray"
+        className="fixed bottom-4 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-ink text-white shadow-lg transition hover:bg-black xl:hidden"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h6" />
+        </svg>
+      </button>
+
+      <SideTray
+        open={trayOpen}
+        onClose={() => setTrayOpen(false)}
+        accounts={accounts}
+        onDisconnected={onDisconnected}
+        unconnected={unconnected}
+      />
     </div>
   );
 }

@@ -23,6 +23,32 @@ const UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/file
 const MAX_INLINE_VIDEO_BYTES = 15 * 1024 * 1024;
 const FILE_READY_TIMEOUT_MS = 120_000;
 
+// Gemini returns 503/429 when capacity is temporarily exhausted. Retry with
+// exponential backoff (plus jitter) so short-lived spikes don't fail requests.
+const MAX_RETRIES = 3;
+const RETRY_BASE_MS = 1000;
+
+function isRetryableStatus(status: number): boolean {
+  return status === 429 || status === 503;
+}
+
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  opts: { maxRetries?: number } = {}
+): Promise<Response> {
+  const maxRetries = opts.maxRetries ?? MAX_RETRIES;
+  let lastRes: Response | undefined;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    lastRes = await fetch(url, init);
+    if (!isRetryableStatus(lastRes.status) || attempt === maxRetries) return lastRes;
+    const waitMs =
+      RETRY_BASE_MS * Math.pow(2, attempt) + Math.random() * 500;
+    await new Promise((r) => setTimeout(r, waitMs));
+  }
+  return lastRes as Response;
+}
+
 function buildPrompt(opts: {
   hasImage: boolean;
   hasVideo: boolean;
@@ -70,7 +96,7 @@ async function uploadVideoFile(opts: {
     opts.filename ?? "video.mp4"
   );
 
-  const res = await fetch(UPLOAD_URL, {
+  const res = await fetchWithRetry(UPLOAD_URL, {
     method: "POST",
     headers: { "x-goog-api-key": API_KEY },
     body: form,
@@ -95,7 +121,7 @@ async function waitForFileReady(name: string, timeoutMs = FILE_READY_TIMEOUT_MS)
   if (!API_KEY) throw new Error("GEMINI_API_KEY is not set.");
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const res = await fetch(
+    const res = await fetchWithRetry(
       `https://generativelanguage.googleapis.com/v1beta/files/${name}`,
       { headers: { "x-goog-api-key": API_KEY } }
     );
@@ -165,7 +191,7 @@ export async function generateCaption(input: CaptionInput): Promise<string> {
     }),
   });
 
-  const res = await fetch(API_URL, {
+  const res = await fetchWithRetry(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -202,7 +228,7 @@ async function runTextGeneration(
       "GEMINI_API_KEY is not set. Add it to your environment to use AI writing features."
     );
   }
-  const res = await fetch(API_URL, {
+  const res = await fetchWithRetry(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
