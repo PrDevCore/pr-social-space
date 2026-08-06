@@ -296,7 +296,7 @@ export default function AnalyticsPanel() {
   if (addonMissing) {
     return (
       <div className="rounded-xl border border-dashed border-amber-500/50 bg-amber-500/5 p-8 text-center">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analytics aren't enabled</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analytics aren&apos;t enabled</h3>
         <p className="mx-auto mt-2 max-w-md text-sm text-gray-600 dark:text-gray-400">
           Connect the Analytics add-on in Zernio to unlock post insights, follower growth, and
           best-time recommendations.
@@ -421,6 +421,7 @@ export default function AnalyticsPanel() {
                     return (
                       <li key={p.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                         {p.thumbnailUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={p.thumbnailUrl}
                             alt=""

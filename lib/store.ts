@@ -162,6 +162,20 @@ export async function recordPost(record: PostRecord) {
   await posts().doc(record.id).set(record);
 }
 
+/**
+ * Update a stored post's status (e.g. scheduled -> published) when a post.*
+ * webhook fires. When userId is supplied it's used to verify the post belongs
+ * to that user; otherwise the signature-verified webhook is trusted directly.
+ */
+export async function updatePostStatus(postId: string, status: string, userId?: string) {
+  const ref = posts().doc(postId);
+  const snap = await ref.get();
+  if (!snap.exists) return;
+  const rec = snap.data() as PostRecord;
+  if (userId && rec.userId !== userId) return;
+  await ref.update({ status });
+}
+
 export async function listPostsForUser(userId: string): Promise<PostRecord[]> {
   // Sorted in memory so no composite Firestore index is required.
   const snap = await posts().where("userId", "==", userId).get();

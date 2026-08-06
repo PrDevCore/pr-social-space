@@ -19,7 +19,7 @@ export async function GET() {
   try {
     const profileId = await ensureProfileForUser(user.id);
     const accounts = await listAccounts(profileId);
-    const posts = await listPosts(profileId, 30);
+    const posts = await listPosts(profileId, 500);
 
     const stories: {
       accountId: string;

@@ -365,28 +365,69 @@ function mapFeedPost(p: any): FeedPost {
   };
 }
 
+const POSTS_PAGE_SIZE = 100; // Zernio /posts limit max per page
+
+interface PostsPage {
+  posts?: any[];
+  pagination?: { page?: number; pages?: number; total?: number };
+}
+
+/**
+ * GET /v1/posts — fetch this user's posts, following pagination until the
+ * requested limit is reached (or all pages are exhausted). Previously only
+ * the first page was fetched, so real published posts fell out of the window
+ * whenever recent scheduled/processing posts filled the page.
+ */
 async function fetchPosts(
   profileId: string,
   opts: { limit?: number; status?: string; sortBy?: string } = {}
 ): Promise<FeedPost[]> {
-  const qs = new URLSearchParams({ profileId, limit: String(opts.limit ?? 20) });
-  if (opts.status) qs.set("status", opts.status);
-  if (opts.sortBy) qs.set("sortBy", opts.sortBy);
-  const { posts } = await zernioFetch<{ posts: any[] }>(
-    `/posts?${qs.toString()}`
-  );
-  return (posts ?? []).map(mapFeedPost);
+  const max = Math.max(1, opts.limit ?? 500);
+  const out: FeedPost[] = [];
+  let page = 1;
+  let pages = 1;
+  do {
+    const qs = new URLSearchParams({
+      profileId,
+      page: String(page),
+      limit: String(POSTS_PAGE_SIZE),
+    });
+    if (opts.status) qs.set("status", opts.status);
+    if (opts.sortBy) qs.set("sortBy", opts.sortBy);
+    const data = await zernioFetch<PostsPage>(`/posts?${qs.toString()}`);
+    const batch = (data.posts ?? []).map(mapFeedPost);
+    out.push(...batch);
+    pages = data.pagination?.pages ?? 1;
+    if (!batch.length) break;
+    page += 1;
+  } while (page <= pages && out.length < max);
+  return out.slice(0, max);
 }
 
-/** GET /v1/posts?profileId=.. — this user's posts (sorted newest first). */
-export async function listPosts(profileId: string, limit = 20): Promise<FeedPost[]> {
-  const mapped = await fetchPosts(profileId, { limit });
-
-  // Live feed = posts that actually went out (published or partially so).
-  const live = mapped.filter((p) => p.status === "published" || p.status === "partial");
-  return (live.length ? live : mapped).sort((a, b) =>
-    (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)
+/** True when a post actually went out on at least one platform. */
+function isLiveStatus(status?: string): boolean {
+  const s = (status ?? "").trim().toLowerCase();
+  return (
+    s === "published" ||
+    s === "partial" ||
+    s === "live" ||
+    s === "success" ||
+    s === "completed"
   );
+}
+
+/**
+ * GET /v1/posts?profileId=.. — this user's live feed: only posts that
+ * actually went out (published or partially so), sorted newest first.
+ * No silent fallback to scheduled/queued posts.
+ */
+export async function listPosts(profileId: string, limit = 500): Promise<FeedPost[]> {
+  const mapped = await fetchPosts(profileId, { limit });
+  return mapped
+    .filter((p) => isLiveStatus(p.status))
+    .sort((a, b) =>
+      (b.publishedAt ?? b.createdAt).localeCompare(a.publishedAt ?? a.createdAt)
+    );
 }
 
 /** GET /v1/posts — every post (published, partial, scheduled), newest first. */

@@ -589,13 +589,14 @@ export default function PostPreview({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-1 rounded-xl border border-black/10 bg-white p-1">
+      <div role="tablist" className="flex flex-wrap gap-1 rounded-xl border border-black/10 bg-white p-1">
         {platforms.map((p) => {
           const meta = PLATFORMS.find((x) => x.id === p);
           const count = accounts.filter((a) => a.platform === p).length;
           return (
             <button
               key={p}
+              role="tab"
               onClick={() => setActive(p)}
               aria-selected={active === p}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition ${

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { recordAccountConnected } from "@/lib/store";
+import { recordAccountConnected, updatePostStatus } from "@/lib/store";
 import { getUserIdForProfileId } from "@/lib/zernio";
 
 /**
@@ -42,8 +42,13 @@ export async function POST(req: NextRequest) {
   }
 
   const event = JSON.parse(rawBody) as {
-    event: string;
+    event?: string;
     account?: { accountId: string; profileId: string; platform: string };
+    postId?: string;
+    status?: string;
+    profileId?: string;
+    post?: Record<string, unknown>;
+    data?: Record<string, unknown>;
   };
 
   if (event.event === "account.connected" && event.account) {
@@ -52,6 +57,28 @@ export async function POST(req: NextRequest) {
     const userId = await getUserIdForProfileId(profileId);
     if (userId) {
       await recordAccountConnected({ userId, accountId, platform });
+    }
+  }
+
+  // post.* events — keep the local activity feed's status in sync with the
+  // platform (e.g. scheduled -> published / failed). Shape-agnostic parsing
+  // so we tolerate whatever Zernio's post webhook payload looks like.
+  const eventName = (event.event ?? "").toLowerCase();
+  if (eventName.includes("post")) {
+    const postPayload = (event.post ?? event.data ?? {}) as Record<string, unknown>;
+    const postId = (postPayload.id ?? postPayload._id ?? event.postId) as string | undefined;
+    const status = (postPayload.status ?? event.status) as string | undefined;
+    const profileId =
+      (postPayload.profileId ?? event.profileId ?? event.account?.profileId) as string | undefined;
+
+    if (postId && status) {
+      if (profileId) {
+        const userId = await getUserIdForProfileId(profileId);
+        if (userId) await updatePostStatus(postId, status, userId);
+      } else {
+        // No profileId in the payload: trust the HMAC-verified webhook.
+        await updatePostStatus(postId, status);
+      }
     }
   }
 

@@ -186,7 +186,7 @@ export default function ContentGallery({
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex gap-1 rounded-xl border border-black/10 bg-white p-1">
+        <div role="tablist" className="flex gap-1 rounded-xl border border-black/10 bg-white p-1">
           {(
             [
               { id: "all", label: `All (${items.length})` },
@@ -196,6 +196,7 @@ export default function ContentGallery({
           ).map((f) => (
             <button
               key={f.id}
+              role="tab"
               onClick={() => setTypeFilter(f.id)}
               aria-selected={typeFilter === f.id}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${

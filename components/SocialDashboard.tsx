@@ -121,10 +121,14 @@ export default function SocialDashboard({
 
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_320px]">
         {/* Vertical navigation */}
-        <nav className="hidden self-start rounded-2xl border border-black/10 bg-white p-2 lg:sticky lg:top-6 lg:flex lg:flex-col lg:gap-1">
+        <nav
+          role="tablist"
+          className="hidden self-start rounded-2xl border border-black/10 bg-white p-2 lg:sticky lg:top-6 lg:flex lg:flex-col lg:gap-1"
+        >
           {TABS.map((t) => (
             <button
               key={t.id}
+              role="tab"
               onClick={() => setTab(t.id)}
               aria-selected={tab === t.id}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
@@ -141,10 +145,14 @@ export default function SocialDashboard({
 
         {/* Main workspace */}
         <main className="min-w-0">
-          <nav className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-black/10 bg-white p-1 lg:hidden">
+          <nav
+            role="tablist"
+            className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-black/10 bg-white p-1 lg:hidden"
+          >
             {TABS.map((t) => (
               <button
                 key={t.id}
+                role="tab"
                 onClick={() => setTab(t.id)}
                 aria-selected={tab === t.id}
                 className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
