@@ -18,7 +18,12 @@ function isProtectedRoute(pathname: string) {
     pathname.startsWith("/profile") ||
     pathname.startsWith("/api/social") ||
     pathname.startsWith("/api/ai") ||
-    pathname.startsWith("/api/reports")
+    pathname.startsWith("/api/reports") ||
+    // Billing: checkout + callback need a session; the Flutterwave webhook
+    // and the public pricing endpoint must stay reachable without one.
+    (pathname.startsWith("/api/billing") &&
+      !pathname.startsWith("/api/billing/webhook") &&
+      !pathname.startsWith("/api/billing/pricing"))
   );
 }
 

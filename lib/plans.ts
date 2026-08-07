@@ -1,4 +1,11 @@
 export type PlanId = "free" | "pro" | "team";
+export type BillingCurrency = "USD" | "NGN";
+
+/** Localized per-period price. null = not purchasable ("Contact us"). */
+export interface CurrencyPrice {
+  USD: number | null;
+  NGN: number | null;
+}
 
 export interface Plan {
   id: PlanId;
@@ -6,6 +13,10 @@ export interface Plan {
   tagline: string;
   /** USD per month. null = "Contact us" pricing. */
   monthlyPrice: number | null;
+  /** Standard per-period price per currency (billed through Flutterwave). */
+  pricing: CurrencyPrice;
+  /** Discounted price for a user's first-ever purchase. */
+  firstTimer: CurrencyPrice;
   /** Max connected accounts. null = unlimited. */
   maxAccounts: number | null;
   /** Max posts per month. null = unlimited. */
@@ -27,6 +38,8 @@ export const PLANS: Plan[] = [
     name: "Free",
     tagline: "Kick the tires on one brand.",
     monthlyPrice: 0,
+    pricing: { USD: 0, NGN: 0 },
+    firstTimer: { USD: 0, NGN: 0 },
     maxAccounts: 2,
     maxPostsPerMonth: 100,
     seats: 1,
@@ -46,6 +59,8 @@ export const PLANS: Plan[] = [
     name: "Pro",
     tagline: "For growing teams that post daily.",
     monthlyPrice: 29,
+    pricing: { USD: 15, NGN: 15000 },
+    firstTimer: { USD: 12, NGN: 12000 },
     maxAccounts: 10,
     maxPostsPerMonth: null,
     seats: 3,
@@ -65,6 +80,8 @@ export const PLANS: Plan[] = [
     name: "Team",
     tagline: "Agencies and multi-brand teams.",
     monthlyPrice: null,
+    pricing: { USD: null, NGN: null },
+    firstTimer: { USD: null, NGN: null },
     maxAccounts: null,
     maxPostsPerMonth: null,
     seats: 10,
@@ -82,6 +99,21 @@ export const PLANS: Plan[] = [
 
 export function getPlan(id: PlanId | null | undefined): Plan {
   return PLANS.find((p) => p.id === id) ?? PLANS[0];
+}
+
+/**
+ * Localized per-period price for a plan. `firstTimer` returns the discounted
+ * price a user gets on their first-ever purchase. Returns null for plans
+ * that aren't purchasable through checkout (e.g. Team / "Custom").
+ */
+export function getPlanPrice(
+  id: PlanId,
+  currency: BillingCurrency,
+  firstTimer = false
+): number | null {
+  const plan = getPlan(id);
+  const table = firstTimer ? plan.firstTimer : plan.pricing;
+  return table[currency];
 }
 
 export function getPlanForAccountCount(accountCount: number): Plan {

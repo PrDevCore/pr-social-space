@@ -1,14 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PLANS, type Plan, type PlanId } from "@/lib/plans";
 
 interface UsageResponse {
-  plan: Plan;
+  plan: { id: string; name: string; tagline: string; features: string[] };
+  planId: "free" | "pro" | "team";
+  planExpiresAt: string | null;
+  currency: "USD" | "NGN";
+  price: number | null;
+  firstTimerPrice: number | null;
+  isFirstTimer: boolean;
   accounts: number;
   maxAccounts: number | null;
   postsThisMonth: number;
   maxPostsPerMonth: number | null;
+}
+
+function formatPrice(currency: "USD" | "NGN", amount: number | null) {
+  if (amount === null) return "Custom";
+  if (amount === 0) return "Free";
+  const symbol = currency === "NGN" ? "₦" : "$";
+  const value = currency === "NGN" ? amount.toLocaleString() : amount;
+  return `${symbol}${value}`;
 }
 
 function UsageBar({ label, value, max }: { label: string; value: number; max: number | null }) {
@@ -33,12 +46,21 @@ function UsageBar({ label, value, max }: { label: string; value: number; max: nu
   );
 }
 
+function formatExpiry(iso: string | null) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export default function PlanCard() {
   const [usage, setUsage] = useState<UsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showPicker, setShowPicker] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,21 +79,32 @@ export default function PlanCard() {
     load();
   }, [load]);
 
-  const upgrade = async (planId: PlanId) => {
+  // Surface the Flutterwave redirect outcome (?billing=success|failed).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const billing = params.get("billing");
+    if (billing === "success") setBanner("Payment successful — Pro is now active. 🎉");
+    else if (billing === "failed") setBanner("Payment didn't go through. No charge was made.");
+    if (billing) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  const upgrade = async () => {
+    if (!usage) return;
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/social/plan", {
-        method: "PATCH",
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ planId: "pro" }),
       });
-      if (!res.ok) throw new Error("Upgrade failed");
-      setUsage(await res.json());
-      setShowPicker(false);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Checkout failed");
+      window.location.href = data.link;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upgrade failed");
-    } finally {
+      setError(e instanceof Error ? e.message : "Checkout failed");
       setBusy(false);
     }
   };
@@ -88,24 +121,57 @@ export default function PlanCard() {
     );
   }
 
+  const currency = usage?.currency ?? "USD";
+  const displayPrice = !usage
+    ? null
+    : usage.isFirstTimer
+      ? usage.firstTimerPrice ?? usage.price
+      : usage.price;
+  const expired =
+    usage?.planId !== "free" &&
+    usage?.planExpiresAt &&
+    new Date(usage.planExpiresAt).getTime() < Date.now();
+  const isTeam = usage?.planId === "team";
+
   return (
     <div className="card">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-black/50">Plan</h2>
         <span className="rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold capitalize text-accent">
           {usage?.plan.name ?? "Free"}
+          {expired ? " (expired)" : ""}
         </span>
       </div>
 
-      <p className="mt-2 text-sm text-black/50">
-        {usage?.plan.tagline}
-      </p>
+      {banner && (
+        <div
+          className={`mt-3 rounded-xl border px-3 py-2 text-xs ${
+            banner.startsWith("Payment successful")
+              ? "border-green-200 bg-green-50 text-green-800"
+              : "border-red-200 bg-red-50 text-red-800"
+          }`}
+        >
+          {banner}
+        </div>
+      )}
+
+      <p className="mt-2 text-sm text-black/50">{usage?.plan.tagline}</p>
       <p className="mt-1 text-2xl font-semibold">
-        ${usage?.plan.monthlyPrice ?? "Custom"}
+        {formatPrice(currency, displayPrice)}
         <span className="text-sm font-normal text-black/40">
-          {usage?.plan.monthlyPrice ? "/mo" : ""}
+          {displayPrice ? "/mo" : ""}
         </span>
       </p>
+
+      {usage?.isFirstTimer && displayPrice !== usage?.price && (
+        <p className="mt-1 text-xs font-medium text-green-600">
+          First-month promo — {formatPrice(currency, usage.price)} from next month.
+        </p>
+      )}
+
+      {usage?.planExpiresAt && !expired && usage.planId !== "free" && (
+        <p className="mt-1 text-xs text-black/40">Active until {formatExpiry(usage.planExpiresAt)}</p>
+      )}
 
       <div className="mt-4 space-y-3">
         <UsageBar
@@ -130,40 +196,30 @@ export default function PlanCard() {
 
       {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
 
-      {!showPicker ? (
+      {!isTeam && (
         <button
           type="button"
-          onClick={() => setShowPicker(true)}
-          className="btn-primary mt-4 w-full"
+          disabled={busy}
+          onClick={upgrade}
+          className="btn-primary mt-4 w-full disabled:opacity-60"
         >
-          {usage?.plan.id === "team" ? "Current plan" : "Upgrade"}
+          {busy
+            ? "Redirecting to checkout…"
+            : usage?.planId === "pro"
+              ? `Renew Pro — ${formatPrice(currency, displayPrice)}/mo`
+              : `Upgrade to Pro — ${formatPrice(currency, displayPrice)}/mo`}
         </button>
-      ) : (
-        <div className="mt-4 space-y-2">
-          <p className="text-xs font-medium text-black/50">Pick a plan to switch to (demo):</p>
-          {PLANS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              disabled={busy || p.id === usage?.plan.id}
-              onClick={() => upgrade(p.id)}
-              className="btn-secondary w-full justify-between"
-            >
-              <span className="capitalize">{p.name}</span>
-              <span className="text-black/40">
-                {p.monthlyPrice === null ? "Custom" : `$${p.monthlyPrice}/mo`}
-              </span>
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setShowPicker(false)}
-            className="w-full py-1 text-xs text-black/40 hover:text-black/60"
-          >
-            Cancel
-          </button>
-        </div>
       )}
+      {isTeam && (
+        <button type="button" disabled className="btn-secondary mt-4 w-full disabled:opacity-60">
+          Current plan
+        </button>
+      )}
+
+      <p className="mt-3 text-xs leading-relaxed text-black/40">
+        Payments are processed securely by Flutterwave. Each payment activates Pro for 30
+        days; your account returns to Free automatically when it lapses.
+      </p>
     </div>
   );
 }

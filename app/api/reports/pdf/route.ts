@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { buildReportPdf } from "@/lib/report-pdf";
-import { getPlan } from "@/lib/plans";
-import { getUserPlan } from "@/lib/store";
+import { getActivePlan } from "@/lib/plan-usage";
 import {
   ensureProfileForUser,
   getAnalytics,
@@ -32,7 +31,7 @@ export async function GET(req: NextRequest) {
   const to = searchParams.get("to") ?? undefined;
 
   // PDF reports are a Pro/Team capability.
-  const plan = getPlan(await getUserPlan(user.id));
+  const plan = await getActivePlan(user.id);
   if (!plan.capability.pdfReports) {
     return NextResponse.json(
       {

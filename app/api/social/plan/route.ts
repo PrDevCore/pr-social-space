@@ -1,36 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { getUsageReport, setUserPlanForUser } from "@/lib/plan-usage";
-import { getPlan, type PlanId } from "@/lib/plans";
+import { getUsageReport } from "@/lib/plan-usage";
+import { getPlanPrice } from "@/lib/plans";
+import { detectCurrency, type BillingCurrency } from "@/lib/flutterwave";
+import { hasPriorPayment } from "@/lib/store";
 
 /**
  * Plan & usage.
  *
- * GET  /api/social/plan  -> { plan, accounts, maxAccounts, postsThisMonth, maxPostsPerMonth }
- * PATCH /api/social/plan { planId } -> mock upgrade (switches the plan so the
- *                                      rest of the app enforces the new limits)
+ * GET /api/social/plan -> { plan, planId, planExpiresAt, accounts, ... } plus
+ * the localized billing price (and first-timer price) so the UI can show what
+ * upgrading to Pro costs in the viewer's currency.
+ *
+ * Plan changes no longer happen here — that's the Flutterwave checkout flow
+ * (/api/billing/checkout).
  */
-
-const PLAN_IDS = new Set<PlanId>(["free", "pro", "team"]);
-
-export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const usage = await getUsageReport(user.id);
-  return NextResponse.json(usage);
-}
-
-export async function PATCH(req: NextRequest) {
+export async function GET(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = (await req.json().catch(() => ({}))) as { planId?: string };
-  const planId = body.planId as PlanId;
-  if (!planId || !PLAN_IDS.has(planId)) {
-    return NextResponse.json({ error: "A valid planId is required." }, { status: 400 });
-  }
-
-  await setUserPlanForUser(user.id, planId);
   const usage = await getUsageReport(user.id);
-  return NextResponse.json({ ...usage, plan: getPlan(planId) });
+  const currency: BillingCurrency = detectCurrency(req);
+  const isFirstTimer = !(await hasPriorPayment(user.id));
+
+  return NextResponse.json({
+    ...usage,
+    currency,
+    price: getPlanPrice("pro", currency, false),
+    firstTimerPrice: getPlanPrice("pro", currency, true),
+    isFirstTimer,
+  });
 }

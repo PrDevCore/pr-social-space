@@ -26,6 +26,7 @@ const sessions = () => db().collection("sessions");
 const posts = () => db().collection("posts");
 const events = () => db().collection("connectedAccountEvents");
 const profiles = () => db().collection("profiles");
+const payments = () => db().collection("payments");
 
 interface UserRecord {
   id: string;
@@ -34,6 +35,8 @@ interface UserRecord {
   passwordHash: string;
   createdAt: string;
   plan?: "free" | "pro" | "team";
+  /** When a paid plan expires; paid plans auto-downgrade to free after this. */
+  planExpiresAt?: string;
 }
 
 interface SessionRecord {
@@ -130,6 +133,82 @@ export async function getUserPlan(userId: string): Promise<"free" | "pro" | "tea
   const snap = await users().doc(userId).get();
   if (!snap.exists) return "free";
   return ((snap.data() as UserRecord).plan as "free" | "pro" | "team") ?? "free";
+}
+
+export async function getUserPlanStatus(
+  userId: string
+): Promise<{ plan: "free" | "pro" | "team"; planExpiresAt: string | null }> {
+  const snap = await users().doc(userId).get();
+  if (!snap.exists) return { plan: "free", planExpiresAt: null };
+  const rec = snap.data() as UserRecord;
+  return { plan: rec.plan ?? "free", planExpiresAt: rec.planExpiresAt ?? null };
+}
+
+export async function getPlanExpiry(userId: string): Promise<string | null> {
+  const snap = await users().doc(userId).get();
+  if (!snap.exists) return null;
+  return (snap.data() as UserRecord).planExpiresAt ?? null;
+}
+
+/**
+ * Activate (or extend) a paid plan for `days`. If the user already has an
+ * active subscription, renewal extends from the current expiry instead of
+ * overwriting it, so early renewals stack.
+ */
+export async function activatePlan(
+  userId: string,
+  plan: "free" | "pro" | "team",
+  days: number
+) {
+  const { planExpiresAt } = await getUserPlanStatus(userId);
+  const base =
+    planExpiresAt && new Date(planExpiresAt).getTime() > Date.now()
+      ? new Date(planExpiresAt).getTime()
+      : Date.now();
+  const expiresAt = new Date(base + days * 24 * 60 * 60 * 1000).toISOString();
+  await users().doc(userId).update({ plan, planExpiresAt: expiresAt });
+}
+
+/* ------------------------------- Payments ------------------------------- */
+
+interface PaymentRecord {
+  txRef: string;
+  userId: string;
+  planId: "free" | "pro" | "team";
+  amount: number;
+  currency: string;
+  status: "pending" | "success";
+  flutterwaveTransactionId?: string;
+  createdAt: string;
+  settledAt?: string;
+}
+
+/** Record a checkout that was started (pending) or settled (success). */
+export async function recordPayment(record: PaymentRecord) {
+  await payments().doc(record.txRef).set(record);
+}
+
+export async function getPaymentByTxRef(txRef: string): Promise<PaymentRecord | null> {
+  const snap = await payments().doc(txRef).get();
+  if (!snap.exists) return null;
+  return snap.data() as PaymentRecord;
+}
+
+export async function markPaymentSuccess(
+  txRef: string,
+  patch: { flutterwaveTransactionId?: string; settledAt: string }
+) {
+  await payments().doc(txRef).update({ status: "success", ...patch });
+}
+
+/** True when the user has settled at least one payment (drives first-timer pricing). */
+export async function hasPriorPayment(userId: string): Promise<boolean> {
+  const snap = await payments()
+    .where("userId", "==", userId)
+    .where("status", "==", "success")
+    .limit(1)
+    .get();
+  return !snap.empty;
 }
 
 /* ------------------------------- Sessions ------------------------------- */

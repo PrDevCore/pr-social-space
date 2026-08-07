@@ -7,8 +7,7 @@ import {
   getDailyMetrics,
   getFollowerStats,
 } from "@/lib/zernio";
-import { getPlan } from "@/lib/plans";
-import { getUserPlan } from "@/lib/store";
+import { getActivePlan } from "@/lib/plan-usage";
 
 /**
  * Analytics dashboard data.
@@ -59,7 +58,7 @@ export async function GET(req: NextRequest) {
       }
       case "besttime": {
         // Best-time recommendations are a Pro/Team capability.
-        const plan = getPlan(await getUserPlan(user.id));
+        const plan = await getActivePlan(user.id);
         if (!plan.capability.bestTime) {
           return NextResponse.json(
             {

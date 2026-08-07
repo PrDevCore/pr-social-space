@@ -220,7 +220,8 @@ export default async function Home() {
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="text-3xl font-semibold tracking-tight">Simple, transparent pricing</h2>
           <p className="mt-3 text-black/60">
-            Start free and upgrade when you&apos;re ready. No billing is wired up yet — just pick a plan to keep things moving.
+            Start free and upgrade when you&apos;re ready. Prices shown in your local
+            currency, paid securely through Flutterwave.
           </p>
         </div>
         <PricingSection />
