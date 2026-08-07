@@ -4,6 +4,14 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import ThemeToggle from "@/components/ThemeToggle";
 import RegisterForm from "./RegisterForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Create account",
+  description:
+    "Join Social Hub free and manage all your social platforms from one dashboard.",
+  robots: { index: false, follow: false },
+};
 
 export default async function RegisterPage({
   searchParams,

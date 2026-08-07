@@ -4,6 +4,13 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import ThemeToggle from "@/components/ThemeToggle";
 import LoginForm from "./LoginForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to Social Hub and manage your social accounts.",
+  robots: { index: false, follow: false },
+};
 
 export default async function LoginPage({
   searchParams,

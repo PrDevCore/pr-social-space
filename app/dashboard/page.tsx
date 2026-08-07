@@ -2,6 +2,12 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureProfileForUser, listAccounts, SocialAccount } from "@/lib/zernio";
 import SocialDashboard from "@/components/SocialDashboard";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 
 // [ Redirect to /dashboard ]
 // middleware.ts already guarantees a session exists here (route is protected),

@@ -2,6 +2,12 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureProfileForUser, listAccounts, SocialAccount } from "@/lib/zernio";
 import ContentGallery from "@/components/ContentGallery";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Content library",
+  robots: { index: false, follow: false },
+};
 
 // /content — full-size media library. middleware.ts guarantees a session
 // exists here, but we re-validate for type-safety / defense in depth.

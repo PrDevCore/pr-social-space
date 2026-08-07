@@ -107,3 +107,21 @@ Because every route and component calls `lib/store.ts`, swapping the backend
   or a post, so users can never act on someone else's connected account.
 - Zernio publishes immediately when `publishNow` is set, or on `scheduledFor`
   when a schedule time is provided.
+
+## SEO & search engines
+
+The app ships with `robots.txt` (`app/robots.ts`), a sitemap
+(`app/sitemap.ts`), full Open Graph/Twitter metadata and FAQ structured data
+on the landing page. `lib/site.ts` holds the canonical `SITE_URL`
+(default `https://prsocialhub.space`, overridable with the `SITE_URL` env
+var); keep it pointing at your public domain, not a preview URL.
+
+To get indexed after deploying:
+
+1. Google Search Console — add your domain property, verify it (the
+   `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` env var emits the required meta tag
+   when set), then submit `https://prsocialhub.space/sitemap.xml`.
+2. Bing Webmaster Tools — import from Search Console or verify with
+   `NEXT_PUBLIC_BING_SITE_VERIFICATION`.
+3. Make sure `APP_URL` is also set to your public domain so OAuth and
+   Flutterwave billing redirects land on the same host.

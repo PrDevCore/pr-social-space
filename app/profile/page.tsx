@@ -3,6 +3,12 @@ import Image from "next/image";
 import { getCurrentUser } from "@/lib/auth";
 import ProfileForm from "@/components/ProfileForm";
 import PlanCard from "@/components/PlanCard";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Profile",
+  robots: { index: false, follow: false },
+};
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();

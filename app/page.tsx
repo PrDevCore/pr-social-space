@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { SITE_URL } from "@/lib/site";
 import ThemeToggle from "@/components/ThemeToggle";
 import AnimatedMockup from "@/components/landing/AnimatedMockup";
 import MetricsCounter from "@/components/landing/MetricsCounter";
@@ -106,12 +107,48 @@ export default async function Home() {
     },
     {
       q: "Can I upgrade or change plans later?",
-      a: "Right now upgrades are a mock flow on your profile page — no billing is wired up yet. As you grow, Pro and Team unlock more accounts, PDF reports, best-time recommendations and more seats.",
+      a: "Yes. From your profile you can upgrade to Pro with secure Flutterwave payments, billed in USD or NGN depending on your location. Pro and Team unlock more accounts, PDF reports, best-time recommendations and more seats.",
+    },
+  ];
+
+  const faqsLd = faqs.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  }));
+
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Social Hub",
+      url: SITE_URL,
+      logo: `${SITE_URL}/logo.png`,
+      description:
+        "Compose, schedule, engage and report across every major social network from one dashboard.",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Social Hub",
+      url: SITE_URL,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqsLd,
     },
   ];
 
   return (
     <div className="bg-paper text-ink">
+      {structuredData.map((data, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+        />
+      ))}
       {/* Sticky nav */}
       <header className="sticky top-0 z-40 border-b border-black/10 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
