@@ -107,6 +107,7 @@ export default function SocialDashboard({
   const [accounts, setAccounts] = useState(initialAccounts);
   const [tab, setTab] = useState<Tab>("compose");
   const [trayOpen, setTrayOpen] = useState(false);
+  const hasAccounts = accounts.length > 0;
   const connectedPlatforms = new Set(accounts.map((a) => a.platform));
   const unconnected: SocialPlatform[] = PLATFORMS.filter(
     (p) => !connectedPlatforms.has(p.id)
@@ -121,33 +122,10 @@ export default function SocialDashboard({
 
       <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_320px]">
         {/* Vertical navigation */}
-        <nav
-          role="tablist"
-          className="hidden self-start rounded-2xl border border-black/10 bg-white p-2 lg:sticky lg:top-6 lg:flex lg:flex-col lg:gap-1"
-        >
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              role="tab"
-              onClick={() => setTab(t.id)}
-              aria-selected={tab === t.id}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                tab === t.id
-                  ? "bg-ink text-white shadow-sm"
-                  : "text-black/60 hover:bg-black/5 hover:text-black"
-              }`}
-            >
-              {t.icon}
-              {t.label}
-            </button>
-          ))}
-        </nav>
-
-        {/* Main workspace */}
-        <main className="min-w-0">
+        {hasAccounts && (
           <nav
             role="tablist"
-            className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-black/10 bg-white p-1 lg:hidden"
+            className="hidden self-start rounded-2xl border border-black/10 bg-white p-2 lg:sticky lg:top-6 lg:flex lg:flex-col lg:gap-1"
           >
             {TABS.map((t) => (
               <button
@@ -155,7 +133,7 @@ export default function SocialDashboard({
                 role="tab"
                 onClick={() => setTab(t.id)}
                 aria-selected={tab === t.id}
-                className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                   tab === t.id
                     ? "bg-ink text-white shadow-sm"
                     : "text-black/60 hover:bg-black/5 hover:text-black"
@@ -166,16 +144,71 @@ export default function SocialDashboard({
               </button>
             ))}
           </nav>
+        )}
 
-          {tab === "compose" && <ComposePost accounts={accounts} />}
-          {tab === "inbox" && <InboxPanel />}
-          {tab === "calendar" && <CalendarPanel />}
-          {tab === "feeds" && <FeedSection accounts={accounts} />}
-          {tab === "activity" && <ActivityPanel accounts={accounts} />}
-          {tab === "scheduler" && <SchedulerPanel accounts={accounts} />}
-          {tab === "analytics" && <AnalyticsPanel />}
-          {tab === "competitors" && <CompetitorsPanel />}
-        </main>
+        {/* Main workspace */}
+        {hasAccounts ? (
+          <main className="min-w-0">
+            <nav
+              role="tablist"
+              className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-black/10 bg-white p-1 lg:hidden"
+            >
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  role="tab"
+                  onClick={() => setTab(t.id)}
+                  aria-selected={tab === t.id}
+                  className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    tab === t.id
+                      ? "bg-ink text-white shadow-sm"
+                      : "text-black/60 hover:bg-black/5 hover:text-black"
+                  }`}
+                >
+                  {t.icon}
+                  {t.label}
+                </button>
+              ))}
+            </nav>
+
+            {tab === "compose" && <ComposePost accounts={accounts} />}
+            {tab === "inbox" && <InboxPanel />}
+            {tab === "calendar" && <CalendarPanel />}
+            {tab === "feeds" && <FeedSection accounts={accounts} />}
+            {tab === "activity" && <ActivityPanel accounts={accounts} />}
+            {tab === "scheduler" && <SchedulerPanel accounts={accounts} />}
+            {tab === "analytics" && <AnalyticsPanel />}
+            {tab === "competitors" && <CompetitorsPanel />}
+          </main>
+        ) : (
+          <main className="min-w-0">
+            <div className="card flex flex-col items-center gap-3 p-10 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10">
+                <svg
+                  className="h-7 w-7 text-accent"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2a4 4 0 01-4 4H9a2 2 0 01-2-2v-2m0-10h10a2 2 0 012 2v6a2 2 0 01-2 2H7m0 4H5a2 2 0 01-2-2V5a2 2 0 012-2h6a2 2 0 012 2v3"
+                  />
+                </svg>
+              </span>
+              <h2 className="text-lg font-semibold tracking-tight">
+                Connect a social account to get started
+              </h2>
+              <p className="max-w-sm text-sm text-black/60">
+                Posts won&apos;t show until you connect at least one account.
+                Use the Connect panel on the right (or the floating button below)
+                to link your first platform.
+              </p>
+            </div>
+          </main>
+        )}
 
         {/* Persistent tray column (xl+) */}
         <div className="hidden xl:block">
