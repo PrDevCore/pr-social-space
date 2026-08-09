@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const user = await createUser({
       name,
       email,
-      passwordHash: hashPassword(password),
+      passwordHash: await hashPassword(password),
     });
 
     const token = createSessionToken();

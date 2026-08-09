@@ -17,7 +17,7 @@ import { ensureProfileForUser, listAccounts } from "@/lib/zernio";
 
 export interface UsageReport {
   plan: Plan;
-  planId: "free" | "pro" | "team";
+  planId: "free" | "business" | "pro" | "team";
   planExpiresAt: string | null;
   accounts: number;
   maxAccounts: number | null;

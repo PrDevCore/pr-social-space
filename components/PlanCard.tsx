@@ -1,14 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useCurrency } from "@/components/CurrencyProvider";
 
 interface UsageResponse {
   plan: { id: string; name: string; tagline: string; features: string[] };
-  planId: "free" | "pro" | "team";
+  planId: "free" | "business" | "pro" | "team";
   planExpiresAt: string | null;
   currency: "USD" | "NGN";
   price: number | null;
   firstTimerPrice: number | null;
+  businessPrice: number | null;
+  businessFirstTimerPrice: number | null;
   isFirstTimer: boolean;
   accounts: number;
   maxAccounts: number | null;
@@ -56,6 +59,7 @@ function formatExpiry(iso: string | null) {
 }
 
 export default function PlanCard() {
+  const { currency } = useCurrency();
   const [usage, setUsage] = useState<UsageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +69,7 @@ export default function PlanCard() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/social/plan", { cache: "no-store" });
+      const res = await fetch(`/api/social/plan?currency=${currency}`, { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to load plan");
       setUsage(await res.json());
     } catch {
@@ -73,7 +77,7 @@ export default function PlanCard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currency]);
 
   useEffect(() => {
     load();
@@ -83,14 +87,14 @@ export default function PlanCard() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const billing = params.get("billing");
-    if (billing === "success") setBanner("Payment successful — Pro is now active. 🎉");
+    if (billing === "success") setBanner("Payment successful — your plan is now active.");
     else if (billing === "failed") setBanner("Payment didn't go through. No charge was made.");
     if (billing) {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
 
-  const upgrade = async () => {
+  const upgrade = async (planId: "business" | "pro", planName: string) => {
     if (!usage) return;
     setBusy(true);
     setError(null);
@@ -98,10 +102,11 @@ export default function PlanCard() {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: "pro" }),
+        body: JSON.stringify({ planId }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "Checkout failed");
+      setBanner(`Redirecting to Flutterwave to pay for ${planName}…`);
       window.location.href = data.link;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Checkout failed");
@@ -121,7 +126,6 @@ export default function PlanCard() {
     );
   }
 
-  const currency = usage?.currency ?? "USD";
   const displayPrice = !usage
     ? null
     : usage.isFirstTimer
@@ -132,6 +136,35 @@ export default function PlanCard() {
     usage?.planExpiresAt &&
     new Date(usage.planExpiresAt).getTime() < Date.now();
   const isTeam = usage?.planId === "team";
+
+  const planPrices = !usage
+    ? { business: null, pro: null }
+    : {
+        business: usage.isFirstTimer
+          ? usage.businessFirstTimerPrice ?? usage.businessPrice
+          : usage.businessPrice,
+        pro: usage.isFirstTimer
+          ? usage.firstTimerPrice ?? usage.price
+          : usage.price,
+      };
+
+  // Plans the user can purchase from here: everything paid above their current
+  // tier, plus renewal of their current paid tier.
+  const purchasable: { id: "business" | "pro"; label: string }[] = [];
+  if (!isTeam && usage) {
+    const tier = ["free", "business", "pro"].indexOf(usage.planId);
+    ["business", "pro"].forEach((id) => {
+      const p = id as "business" | "pro";
+      const idx = ["free", "business", "pro"].indexOf(p);
+      if (idx >= tier) {
+        const renewing = usage.planId === p;
+        purchasable.push({
+          id: p,
+          label: `${renewing ? "Renew" : "Upgrade to"} ${p === "pro" ? "Pro" : "Business"} — ${formatPrice(currency, planPrices[p])}/mo`,
+        });
+      }
+    });
+  }
 
   return (
     <div className="card">
@@ -197,18 +230,19 @@ export default function PlanCard() {
       {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
 
       {!isTeam && (
-        <button
-          type="button"
-          disabled={busy}
-          onClick={upgrade}
-          className="btn-primary mt-4 w-full disabled:opacity-60"
-        >
-          {busy
-            ? "Redirecting to checkout…"
-            : usage?.planId === "pro"
-              ? `Renew Pro — ${formatPrice(currency, displayPrice)}/mo`
-              : `Upgrade to Pro — ${formatPrice(currency, displayPrice)}/mo`}
-        </button>
+        <div className="mt-4 space-y-2">
+          {purchasable.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              disabled={busy}
+              onClick={() => upgrade(id, id === "pro" ? "Pro" : "Business")}
+              className="btn-primary w-full disabled:opacity-60"
+            >
+              {busy ? "Redirecting to checkout…" : label}
+            </button>
+          ))}
+        </div>
       )}
       {isTeam && (
         <button type="button" disabled className="btn-secondary mt-4 w-full disabled:opacity-60">

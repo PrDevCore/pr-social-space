@@ -5,10 +5,10 @@ import {
   initiatePayment,
   type BillingCurrency,
 } from "@/lib/flutterwave";
-import { getPlanPrice, type PlanId } from "@/lib/plans";
+import { getPlan, getPlanPrice, type PlanId } from "@/lib/plans";
 import { hasPriorPayment, recordPayment } from "@/lib/store";
 
-// POST /api/billing/checkout { planId: "pro" }
+// POST /api/billing/checkout { planId: "business" | "pro" }
 // Starts a Flutterwave hosted checkout for the signed-in user.
 //   - Currency is picked by IP country (NG -> NGN, else USD).
 //   - New members (no prior successful payment) get the first-timer price.
@@ -20,16 +20,17 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as { planId?: string };
   const planId = body.planId as PlanId | undefined;
-  if (planId !== "pro") {
+  const plan = getPlan(planId);
+  if (["free", "team"].includes(plan.id)) {
     return NextResponse.json(
-      { error: "Only the Pro plan can be purchased here." },
+      { error: "This plan isn't purchasable through checkout." },
       { status: 400 }
     );
   }
 
   const currency: BillingCurrency = detectCurrency(req);
   const isFirstTimer = !(await hasPriorPayment(user.id));
-  const amount = getPlanPrice(planId, currency, isFirstTimer);
+  const amount = getPlanPrice(plan.id, currency, isFirstTimer);
   if (amount === null || amount <= 0) {
     return NextResponse.json(
       { error: "This plan isn't purchasable through checkout." },
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const txRef = `sh_${user.id.slice(-8)}_${planId}_${Date.now()}`;
+  const txRef = `sh_${user.id.slice(-8)}_${plan.id}_${Date.now()}`;
   const appUrl = process.env.APP_URL ?? req.nextUrl.origin;
   const redirectUrl = `${appUrl}/api/billing/callback`;
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     await recordPayment({
       txRef,
       userId: user.id,
-      planId,
+      planId: plan.id,
       amount,
       currency,
       status: "pending",
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
       currency,
       customer: { email: user.email, name: user.name },
       redirectUrl,
-      title: "Social Hub Pro",
+      title: `Social Hub ${plan.name}`,
       description: "Social Hub membership — 30 days",
     });
 

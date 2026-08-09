@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { SITE_URL } from "@/lib/site";
 import ThemeToggle from "@/components/ThemeToggle";
+import RegionToggle from "@/components/RegionToggle";
 import AnimatedMockup from "@/components/landing/AnimatedMockup";
 import MetricsCounter from "@/components/landing/MetricsCounter";
 import PricingSection from "@/components/landing/PricingSection";
@@ -164,6 +165,7 @@ export default async function Home() {
           </nav>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <RegionToggle />
             <Link href="/auth/login" className="hidden text-sm font-medium text-black/70 hover:text-black sm:block">
               Sign in
             </Link>

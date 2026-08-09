@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   createSessionToken,
+  hashPassword,
+  passwordNeedsRehash,
   SESSION_COOKIE,
   sessionCookieOptions,
   verifyPassword,
 } from "@/lib/auth";
-import { createSession, findUserByEmail } from "@/lib/store";
+import { createSession, findUserByEmail, updatePasswordHash } from "@/lib/store";
 
 export async function POST(req: NextRequest) {
   let body: { email?: string; password?: string };
@@ -27,11 +29,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const user = await findUserByEmail(email);
-    if (!user || !verifyPassword(password, user.passwordHash)) {
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return NextResponse.json(
         { error: "Invalid email or password." },
         { status: 401 }
       );
+    }
+
+    // Upgrade legacy scrypt hashes to Argon2id on successful login.
+    if (passwordNeedsRehash(user.passwordHash)) {
+      await updatePasswordHash(user.id, await hashPassword(password));
     }
 
     const token = createSessionToken();

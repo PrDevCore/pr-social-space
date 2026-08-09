@@ -49,12 +49,34 @@ async function flutterwaveFetch<T>(path: string, init: RequestInit = {}): Promis
 
 /* ------------------------------ Currency -------------------------------- */
 
+/** Cookie name holding the buyer's explicit region/currency choice. */
+export const CURRENCY_COOKIE = "currency";
+
+/** Validate/coerce an arbitrary token into a supported currency, or null. */
+export function parseCurrency(value: string | null | undefined): BillingCurrency | null {
+  const v = value?.trim().toUpperCase();
+  return v === "NGN" || v === "USD" ? v : null;
+}
+
+function readCookie(headerCookie: string | null | undefined, name: string): string | undefined {
+  if (!headerCookie) return undefined;
+  for (const part of headerCookie.split(";")) {
+    const [key, ...rest] = part.trim().split("=");
+    if (key === name) return rest.join("=");
+  }
+  return undefined;
+}
+
 /**
- * Pick the billing currency from the request's country headers
- * (Vercel provides x-vercel-ip-country). Nigeria -> NGN, everything else
- * -> USD. FLW_CURRENCY overrides for local dev.
+ * Pick the billing currency for a request. Resolution order:
+ *   1. The user's explicit choice (the `currency` cookie set by the region
+ *      toggle) — this lets visitors pick USD or NGN regardless of location.
+ *   2. FLW_CURRENCY env override (local dev).
+ *   3. Country headers (Vercel x-vercel-ip-country). Nigeria -> NGN, else USD.
  */
 export function detectCurrency(req: { headers: Headers }): BillingCurrency {
+  const fromCookie = parseCurrency(readCookie(req.headers.get("cookie"), CURRENCY_COOKIE));
+  if (fromCookie) return fromCookie;
   const override = process.env.FLW_CURRENCY?.trim().toUpperCase();
   if (override === "NGN" || override === "USD") return override;
   const country = (

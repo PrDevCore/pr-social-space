@@ -34,7 +34,7 @@ interface UserRecord {
   email: string;
   passwordHash: string;
   createdAt: string;
-  plan?: "free" | "pro" | "team";
+  plan?: "free" | "business" | "pro" | "team";
   /** When a paid plan expires; paid plans auto-downgrade to free after this. */
   planExpiresAt?: string;
 }
@@ -61,7 +61,7 @@ export interface PublicUser {
   name: string;
   email: string;
   createdAt: string;
-  plan: "free" | "pro" | "team";
+  plan: "free" | "business" | "pro" | "team";
 }
 
 function toPublicUser(u: UserRecord): PublicUser {
@@ -125,19 +125,23 @@ export async function updateUser(
   return toPublicUser(updated);
 }
 
-export async function setUserPlan(userId: string, plan: "free" | "pro" | "team") {
+export async function updatePasswordHash(id: string, passwordHash: string) {
+  await users().doc(id).update({ passwordHash });
+}
+
+export async function setUserPlan(userId: string, plan: "free" | "business" | "pro" | "team") {
   await users().doc(userId).update({ plan });
 }
 
-export async function getUserPlan(userId: string): Promise<"free" | "pro" | "team"> {
+export async function getUserPlan(userId: string): Promise<"free" | "business" | "pro" | "team"> {
   const snap = await users().doc(userId).get();
   if (!snap.exists) return "free";
-  return ((snap.data() as UserRecord).plan as "free" | "pro" | "team") ?? "free";
+  return ((snap.data() as UserRecord).plan as "free" | "business" | "pro" | "team") ?? "free";
 }
 
 export async function getUserPlanStatus(
   userId: string
-): Promise<{ plan: "free" | "pro" | "team"; planExpiresAt: string | null }> {
+): Promise<{ plan: "free" | "business" | "pro" | "team"; planExpiresAt: string | null }> {
   const snap = await users().doc(userId).get();
   if (!snap.exists) return { plan: "free", planExpiresAt: null };
   const rec = snap.data() as UserRecord;
@@ -157,7 +161,7 @@ export async function getPlanExpiry(userId: string): Promise<string | null> {
  */
 export async function activatePlan(
   userId: string,
-  plan: "free" | "pro" | "team",
+  plan: "free" | "business" | "pro" | "team",
   days: number
 ) {
   const { planExpiresAt } = await getUserPlanStatus(userId);
@@ -174,7 +178,7 @@ export async function activatePlan(
 interface PaymentRecord {
   txRef: string;
   userId: string;
-  planId: "free" | "pro" | "team";
+  planId: "free" | "business" | "pro" | "team";
   amount: number;
   currency: string;
   status: "pending" | "success";

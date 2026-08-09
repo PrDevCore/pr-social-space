@@ -1,6 +1,25 @@
+"use client";
+
 import Link from "next/link";
-import { headers } from "next/headers";
-import { getPlanPrice, PLANS, type BillingCurrency } from "@/lib/plans";
+import { useEffect, useState } from "react";
+import { useCurrency, type Currency } from "@/components/CurrencyProvider";
+
+interface PlanPricing {
+  id: string;
+  name: string;
+  tagline: string;
+  features: string[];
+  price: number | null;
+  firstTimerPrice: number | null;
+}
+
+function formatPrice(currency: Currency, amount: number | null) {
+  if (amount === null) return "Custom";
+  if (amount === 0) return "Free";
+  const symbol = currency === "NGN" ? "₦" : "$";
+  const value = currency === "NGN" ? amount.toLocaleString() : amount;
+  return `${symbol}${value}`;
+}
 
 function CheckIcon() {
   return (
@@ -10,30 +29,40 @@ function CheckIcon() {
   );
 }
 
-async function detectCurrency(): Promise<BillingCurrency> {
-  const override = process.env.FLW_CURRENCY?.trim().toUpperCase();
-  if (override === "NGN" || override === "USD") return override;
-  const h = await headers();
-  const country = (h.get("x-vercel-ip-country") ?? h.get("cf-ipcountry") ?? "").toUpperCase();
-  return country === "NG" ? "NGN" : "USD";
-}
+export default function PricingSection() {
+  const { currency } = useCurrency();
+  const [plans, setPlans] = useState<PlanPricing[] | null>(null);
 
-function formatPrice(currency: BillingCurrency, amount: number | null) {
-  if (amount === null) return "Custom";
-  if (amount === 0) return "Free";
-  const symbol = currency === "NGN" ? "₦" : "$";
-  const value = currency === "NGN" ? amount.toLocaleString() : amount;
-  return `${symbol}${value}`;
-}
+  useEffect(() => {
+    let active = true;
+    setPlans(null);
+    fetch(`/api/billing/pricing?currency=${currency}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("load failed"))))
+      .then((d) => active && setPlans(d.plans as PlanPricing[]))
+      .catch(() => active && setPlans([]));
+    return () => {
+      active = false;
+    };
+  }, [currency]);
 
-export default async function PricingSection() {
-  const currency = await detectCurrency();
+  if (!plans) {
+    return (
+      <div className="grid gap-6 md:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="card h-72 animate-pulse">
+            <div className="h-4 w-24 rounded bg-black/5" />
+            <div className="mt-3 h-3 rounded bg-black/5" />
+            <div className="mt-6 h-10 rounded bg-black/5" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
-      {PLANS.map((plan) => {
+      {plans.map((plan) => {
         const highlighted = plan.id === "free";
-        const price = getPlanPrice(plan.id, currency, false);
         return (
           <div
             key={plan.id}
@@ -51,14 +80,14 @@ export default async function PricingSection() {
             <h3 className="text-lg font-semibold tracking-tight">{plan.name}</h3>
             <p className="mt-1 text-sm text-black/50">{plan.tagline}</p>
             <div className="mt-4 flex items-baseline gap-1">
-              <span className="text-4xl font-semibold tracking-tight">{formatPrice(currency, price)}</span>
-              {price !== null && price > 0 && (
+              <span className="text-4xl font-semibold tracking-tight">{formatPrice(currency, plan.price)}</span>
+              {plan.price !== null && plan.price > 0 && (
                 <span className="text-sm text-black/40">/mo</span>
               )}
             </div>
             {plan.id === "pro" && (
               <p className="mt-1 text-xs font-medium text-green-600">
-                First month {formatPrice(currency, getPlanPrice(plan.id, currency, true))}
+                First month {formatPrice(currency, plan.firstTimerPrice)}
               </p>
             )}
             {plan.id === "team" && (

@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import SWCleanup from "@/components/SWCleanup";
 import ThemeProvider from "@/components/ThemeProvider";
+import { CurrencyProvider } from "@/components/CurrencyProvider";
+import { detectCurrency } from "@/lib/flutterwave";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -67,12 +70,15 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const defaultCurrency = detectCurrency({ headers: headers() });
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased">
         <ThemeProvider>
-          {children}
-          <SWCleanup />
+          <CurrencyProvider defaultCurrency={defaultCurrency}>
+            {children}
+            <SWCleanup />
+          </CurrencyProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,4 +1,4 @@
-export type PlanId = "free" | "pro" | "team";
+export type PlanId = "free" | "business" | "pro" | "team";
 export type BillingCurrency = "USD" | "NGN";
 
 /** Localized per-period price. null = not purchasable ("Contact us"). */
@@ -52,6 +52,26 @@ export const PLANS: Plan[] = [
       "Unified smart inbox (comments, DMs, mentions)",
       "Basic analytics",
       "1 seat",
+    ],
+  },
+  {
+    id: "business",
+    name: "Business",
+    tagline: "For teams that post across several brands.",
+    monthlyPrice: 12,
+    pricing: { USD: 12, NGN: 12000 },
+    firstTimer: { USD: 12, NGN: 12000 },
+    maxAccounts: 6,
+    maxPostsPerMonth: null,
+    seats: 2,
+    capability: { pdfReports: true, bestTime: true, analytics: true },
+    features: [
+      "6 connected accounts",
+      "Unlimited posts",
+      "Everything in Free",
+      "Best-time-to-post recommendations",
+      "Downloadable PDF reports (white-label)",
+      "2 seats",
     ],
   },
   {
