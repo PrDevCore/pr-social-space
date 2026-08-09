@@ -6,13 +6,13 @@ export default function RegionToggle() {
   const { currency, detected, setCurrency } = useCurrency();
 
   const isAuto = currency === detected;
-  const toggle = () => setCurrency(currency === "USD" ? "NGN" : "USD");
+  const toggle = () => setCurrency(currency === "USD" ? "NGN" : currency === "NGN" ? "GBP" : "USD");
 
   return (
     <button
       type="button"
       onClick={toggle}
-      aria-label={`Currency: ${currency}${isAuto ? " (auto)" : ""}. Click to toggle between USD and NGN.`}
+      aria-label={`Currency: ${currency}${isAuto ? " (auto)" : ""}. Click to cycle between USD, NGN and GBP.`}
       title={isAuto ? `Currency: ${currency} (detected for your region). Click to switch.` : `Currency: ${currency}. Click to switch back to ${detected}.`}
       className="flex h-9 items-center gap-1.5 rounded-xl border border-black/10 bg-white px-2.5 text-xs font-semibold text-black/70 transition hover:bg-black/5 hover:text-black dark:border-white/15"
     >

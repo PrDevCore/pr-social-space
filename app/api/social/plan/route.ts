@@ -8,7 +8,7 @@ import { hasPriorPayment } from "@/lib/store";
 /**
  * Plan & usage.
  *
- * GET /api/social/plan[?currency=USD|NGN] -> { plan, planId, planExpiresAt,
+ * GET /api/social/plan[?currency=USD|NGN|GBP] -> { plan, planId, planExpiresAt,
  * accounts, ... } plus the localized billing price (and first-timer price)
  * for Business and Pro so the UI can show what upgrading costs in the
  * viewer's currency.

@@ -1,10 +1,11 @@
 export type PlanId = "free" | "business" | "pro" | "team";
-export type BillingCurrency = "USD" | "NGN";
+export type BillingCurrency = "USD" | "NGN" | "GBP";
 
 /** Localized per-period price. null = not purchasable ("Contact us"). */
 export interface CurrencyPrice {
   USD: number | null;
   NGN: number | null;
+  GBP: number | null;
 }
 
 export interface Plan {
@@ -38,8 +39,8 @@ export const PLANS: Plan[] = [
     name: "Free",
     tagline: "Kick the tires on one brand.",
     monthlyPrice: 0,
-    pricing: { USD: 0, NGN: 0 },
-    firstTimer: { USD: 0, NGN: 0 },
+    pricing: { USD: 0, NGN: 0, GBP: 0 },
+    firstTimer: { USD: 0, NGN: 0, GBP: 0 },
     maxAccounts: 2,
     maxPostsPerMonth: 100,
     seats: 1,
@@ -59,8 +60,8 @@ export const PLANS: Plan[] = [
     name: "Business",
     tagline: "For teams that post across several brands.",
     monthlyPrice: 12,
-    pricing: { USD: 12, NGN: 12000 },
-    firstTimer: { USD: 12, NGN: 12000 },
+    pricing: { USD: 12, NGN: 12000, GBP: 9 },
+    firstTimer: { USD: 12, NGN: 12000, GBP: 9 },
     maxAccounts: 6,
     maxPostsPerMonth: null,
     seats: 2,
@@ -79,8 +80,8 @@ export const PLANS: Plan[] = [
     name: "Pro",
     tagline: "For growing teams that post daily.",
     monthlyPrice: 29,
-    pricing: { USD: 15, NGN: 15000 },
-    firstTimer: { USD: 12, NGN: 12000 },
+    pricing: { USD: 15, NGN: 15000, GBP: 12 },
+    firstTimer: { USD: 12, NGN: 12000, GBP: 9 },
     maxAccounts: 10,
     maxPostsPerMonth: null,
     seats: 3,
@@ -100,8 +101,8 @@ export const PLANS: Plan[] = [
     name: "Team",
     tagline: "Agencies and multi-brand teams.",
     monthlyPrice: null,
-    pricing: { USD: null, NGN: null },
-    firstTimer: { USD: null, NGN: null },
+    pricing: { USD: null, NGN: null, GBP: null },
+    firstTimer: { USD: null, NGN: null, GBP: null },
     maxAccounts: null,
     maxPostsPerMonth: null,
     seats: 10,

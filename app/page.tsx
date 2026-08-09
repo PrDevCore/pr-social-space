@@ -108,7 +108,7 @@ export default async function Home() {
     },
     {
       q: "Can I upgrade or change plans later?",
-      a: "Yes. From your profile you can upgrade to Pro with secure Flutterwave payments, billed in USD or NGN depending on your location. Pro and Team unlock more accounts, PDF reports, best-time recommendations and more seats.",
+      a: "Yes. From your profile you can upgrade to Pro with secure Flutterwave payments, billed in USD, NGN or GBP depending on your region. Pro and Team unlock more accounts, PDF reports, best-time recommendations and more seats.",
     },
   ];
 

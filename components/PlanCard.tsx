@@ -7,7 +7,7 @@ interface UsageResponse {
   plan: { id: string; name: string; tagline: string; features: string[] };
   planId: "free" | "business" | "pro" | "team";
   planExpiresAt: string | null;
-  currency: "USD" | "NGN";
+  currency: "USD" | "NGN" | "GBP";
   price: number | null;
   firstTimerPrice: number | null;
   businessPrice: number | null;
@@ -19,10 +19,10 @@ interface UsageResponse {
   maxPostsPerMonth: number | null;
 }
 
-function formatPrice(currency: "USD" | "NGN", amount: number | null) {
+function formatPrice(currency: "USD" | "NGN" | "GBP", amount: number | null) {
   if (amount === null) return "Custom";
   if (amount === 0) return "Free";
-  const symbol = currency === "NGN" ? "₦" : "$";
+  const symbol = currency === "NGN" ? "₦" : currency === "GBP" ? "£" : "$";
   const value = currency === "NGN" ? amount.toLocaleString() : amount;
   return `${symbol}${value}`;
 }

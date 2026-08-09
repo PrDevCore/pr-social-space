@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 
-export type Currency = "USD" | "NGN";
+export type Currency = "USD" | "NGN" | "GBP";
 
 /** Must match lib/flutterwave.ts CURRENCY_COOKIE. */
 const CURRENCY_COOKIE = "currency";
@@ -47,7 +47,8 @@ export function CurrencyProvider({
 
   // Once mounted, prefer any previously stored choice over the detected region.
   useEffect(() => {
-    if (readCookie(CURRENCY_COOKIE) === "NGN") setCurrencyState("NGN");
+    const saved = readCookie(CURRENCY_COOKIE);
+    if (saved === "USD" || saved === "NGN" || saved === "GBP") setCurrencyState(saved);
   }, []);
 
   const setCurrency = useCallback((c: Currency) => {

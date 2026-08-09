@@ -16,7 +16,7 @@ interface PlanPricing {
 function formatPrice(currency: Currency, amount: number | null) {
   if (amount === null) return "Custom";
   if (amount === 0) return "Free";
-  const symbol = currency === "NGN" ? "₦" : "$";
+  const symbol = currency === "NGN" ? "₦" : currency === "GBP" ? "£" : "$";
   const value = currency === "NGN" ? amount.toLocaleString() : amount;
   return `${symbol}${value}`;
 }

@@ -17,7 +17,7 @@ const API_BASE = "https://api.flutterwave.com/v3";
 const SECRET_KEY = process.env.FLW_SECRET_KEY;
 const WEBHOOK_HASH = process.env.FLW_WEBHOOK_HASH;
 
-export type BillingCurrency = "USD" | "NGN";
+export type BillingCurrency = "USD" | "NGN" | "GBP";
 
 function assertConfigured() {
   if (!SECRET_KEY) {
@@ -55,7 +55,7 @@ export const CURRENCY_COOKIE = "currency";
 /** Validate/coerce an arbitrary token into a supported currency, or null. */
 export function parseCurrency(value: string | null | undefined): BillingCurrency | null {
   const v = value?.trim().toUpperCase();
-  return v === "NGN" || v === "USD" ? v : null;
+  return v === "NGN" || v === "USD" || v === "GBP" ? v : null;
 }
 
 function readCookie(headerCookie: string | null | undefined, name: string): string | undefined {
@@ -70,21 +70,24 @@ function readCookie(headerCookie: string | null | undefined, name: string): stri
 /**
  * Pick the billing currency for a request. Resolution order:
  *   1. The user's explicit choice (the `currency` cookie set by the region
- *      toggle) — this lets visitors pick USD or NGN regardless of location.
+ *      toggle) — this lets visitors pick USD, NGN or GBP regardless of location.
  *   2. FLW_CURRENCY env override (local dev).
- *   3. Country headers (Vercel x-vercel-ip-country). Nigeria -> NGN, else USD.
+ *   3. Country headers (Vercel x-vercel-ip-country). Nigeria -> NGN, UK -> GBP,
+ *      everything else -> USD.
  */
 export function detectCurrency(req: { headers: Headers }): BillingCurrency {
   const fromCookie = parseCurrency(readCookie(req.headers.get("cookie"), CURRENCY_COOKIE));
   if (fromCookie) return fromCookie;
   const override = process.env.FLW_CURRENCY?.trim().toUpperCase();
-  if (override === "NGN" || override === "USD") return override;
+  if (override === "NGN" || override === "USD" || override === "GBP") return override;
   const country = (
     req.headers.get("x-vercel-ip-country") ??
     req.headers.get("cf-ipcountry") ??
     ""
   ).toUpperCase();
-  return country === "NG" ? "NGN" : "USD";
+  if (country === "NG") return "NGN";
+  if (country === "GB") return "GBP";
+  return "USD";
 }
 
 /* ----------------------------- Payments -------------------------------- */

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { detectCurrency, parseCurrency, type BillingCurrency } from "@/lib/flutterwave";
 import { getPlanPrice, PLANS } from "@/lib/plans";
 
-// GET /api/billing/pricing[?currency=USD|NGN]
+// GET /api/billing/pricing[?currency=USD|NGN|GBP]
 // Localized prices for the client UI. Public — it only exposes prices.
 // Currency comes from an explicit ?currency= param, else the `currency`
 // cookie (region toggle), else IP country.
