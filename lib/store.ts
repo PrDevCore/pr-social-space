@@ -37,6 +37,8 @@ interface UserRecord {
   plan?: "free" | "business" | "pro" | "team";
   /** When a paid plan expires; paid plans auto-downgrade to free after this. */
   planExpiresAt?: string;
+  /** LinkedIn OpenID `sub` when the user signed in (or was created) via LinkedIn. */
+  linkedinSub?: string;
 }
 
 interface SessionRecord {
@@ -101,6 +103,39 @@ export async function findUserByEmail(
   if (snap.empty) return null;
   const doc = snap.docs[0].data() as UserRecord;
   return { ...toPublicUser(doc), passwordHash: doc.passwordHash };
+}
+
+export async function findUserByLinkedInSub(sub: string): Promise<PublicUser | null> {
+  const snap = await users().where("linkedinSub", "==", sub).limit(1).get();
+  if (snap.empty) return null;
+  return toPublicUser(snap.docs[0].data() as UserRecord);
+}
+
+/**
+ * Create a user from a LinkedIn sign-in. `passwordHash` holds an opaque
+ * sentinel that can never validate against verifyPassword, so password auth is
+ * implicitly disabled for OAuth-only accounts until they set a password.
+ */
+export async function createLinkedInUser(input: {
+  sub: string;
+  name: string;
+  email: string;
+}): Promise<PublicUser> {
+  const user: UserRecord = {
+    id: `user_${randomUUID()}`,
+    name: input.name.trim() || "LinkedIn member",
+    email: input.email.trim().toLowerCase(),
+    passwordHash: `oauth_linkedin:${input.sub}`,
+    linkedinSub: input.sub,
+    createdAt: new Date().toISOString(),
+    plan: "free",
+  };
+  await users().doc(user.id).set(user);
+  return toPublicUser(user);
+}
+
+export async function linkLinkedInToUser(userId: string, sub: string) {
+  await users().doc(userId).update({ linkedinSub: sub });
 }
 
 export async function getUserById(id: string): Promise<PublicUser | null> {
