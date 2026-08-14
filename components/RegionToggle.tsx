@@ -14,7 +14,7 @@ export default function RegionToggle() {
       onClick={toggle}
       aria-label={`Currency: ${currency}${isAuto ? " (auto)" : ""}. Click to cycle between USD, NGN and GBP.`}
       title={isAuto ? `Currency: ${currency} (detected for your region). Click to switch.` : `Currency: ${currency}. Click to switch back to ${detected}.`}
-      className="flex h-9 items-center gap-1.5 rounded-xl border border-black/10 bg-white px-2.5 text-xs font-semibold text-black/70 transition hover:bg-black/5 hover:text-black dark:border-white/15"
+      className="flex h-9 items-center gap-1.5 rounded-xl border border-accent/40 bg-white px-2.5 text-xs font-semibold text-accent transition hover:bg-accent/5 hover:text-accent dark:border-accent/40"
     >
       <svg
         className="h-4 w-4"

@@ -168,6 +168,12 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
 
   return (
     <div className="space-y-6">
+      <div className="card">
+        <h2 className="text-base font-semibold tracking-tight">Campaign Orchestrator</h2>
+        <p className="mt-1 text-sm text-black/60">
+          Compose a post, generate AI captions, tune the tone, then publish or schedule.
+        </p>
+      </div>
       <form onSubmit={handleSubmit} className="card space-y-4">
       <div>
         <div className="mb-1 flex items-center justify-between gap-2">
@@ -377,7 +383,11 @@ export default function ComposePost({ accounts }: { accounts: SocialAccount[] })
         </p>
       )}
 
-      {result && <p className="text-sm text-black/70">{result}</p>}
+      {result && (
+        <p className="text-sm text-black/70" aria-live="polite">
+          {result}
+        </p>
+      )}
       </form>
 
       <PostPreview
