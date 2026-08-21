@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import DashboardHeader from "@/components/DashboardHeader";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureProfileForUser, listAccounts, SocialAccount } from "@/lib/zernio";
-import DashboardHeader from "@/components/DashboardHeader";
+import OnboardingWizard from "@/components/OnboardingWizard";
 import SocialDashboard from "@/components/SocialDashboard";
 import type { Metadata } from "next";
 
@@ -37,6 +38,7 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
+      {!user.onboarding.completed && <OnboardingWizard user={user} />}
       <DashboardHeader name={user.name} status={loadError ? "error" : "optimal"} />
 
       {justConnected && (

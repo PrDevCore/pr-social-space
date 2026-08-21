@@ -15,6 +15,9 @@ export type Currency = "USD" | "NGN" | "GBP";
 const CURRENCY_COOKIE = "currency";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
+const isCurrency = (v: string | undefined | null): v is Currency =>
+  v === "USD" || v === "NGN" || v === "GBP";
+
 interface CurrencyContextValue {
   /** The visitor's chosen currency (falls back to the detected region). */
   currency: Currency;
@@ -45,15 +48,40 @@ export function CurrencyProvider({
   const [detected] = useState<Currency>(defaultCurrency);
   const [currency, setCurrencyState] = useState<Currency>(defaultCurrency);
 
-  // Once mounted, prefer any previously stored choice over the detected region.
+  // Once mounted:
+  // 1. Prefer any previously stored cookie choice over the detected region.
+  // 2. For signed-in users, also restore their saved currency preference
+  //    (persisted across devices) into both state and the cookie.
   useEffect(() => {
     const saved = readCookie(CURRENCY_COOKIE);
-    if (saved === "USD" || saved === "NGN" || saved === "GBP") setCurrencyState(saved);
+    let applied = false;
+    if (isCurrency(saved)) {
+      setCurrencyState(saved);
+      applied = true;
+    }
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const preferred = data?.user?.preferredCurrency;
+        if (isCurrency(preferred)) {
+          setCurrencyState(preferred);
+          document.cookie = `${CURRENCY_COOKIE}=${preferred}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax`;
+        } else if (!applied && isCurrency(saved)) {
+          document.cookie = `${CURRENCY_COOKIE}=${saved}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax`;
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const setCurrency = useCallback((c: Currency) => {
     setCurrencyState(c);
     document.cookie = `${CURRENCY_COOKIE}=${c}; path=/; max-age=${COOKIE_MAX_AGE}; samesite=lax`;
+    // Persist the preference for signed-in users (fire-and-forget).
+    fetch("/api/auth/preferences", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currency: c }),
+    }).catch(() => {});
   }, []);
 
   return (

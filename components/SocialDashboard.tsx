@@ -6,6 +6,7 @@ import AccountEcosystem from "./AccountEcosystem";
 import ActivityPanel from "./ActivityPanel";
 import AnalyticsPanel from "./AnalyticsPanel";
 import CalendarPanel from "./CalendarPanel";
+import CampaignsPanel from "./CampaignsPanel";
 import CompetitorsPanel from "./CompetitorsPanel";
 import ComposePost from "./ComposePost";
 import DashboardStats from "./DashboardStats";
@@ -52,6 +53,8 @@ export default function SocialDashboard({
         return <AnalyticsPanel />;
       case "competitors":
         return <CompetitorsPanel />;
+      case "campaigns":
+        return <CampaignsPanel accounts={accounts} />;
       case "compose":
       default:
         return <ComposePost accounts={accounts} />;

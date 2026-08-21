@@ -245,9 +245,12 @@ export default function PlanCard() {
         </div>
       )}
       {isTeam && (
-        <button type="button" disabled className="btn-secondary mt-4 w-full disabled:opacity-60">
-          Current plan
-        </button>
+        <div className="mt-4 space-y-2">
+          <p className="text-xs text-black/50">
+            Team is a custom multi-brand workspace. Contact us to set up seats
+            and billing for your agency.
+          </p>
+        </div>
       )}
 
       <p className="mt-3 text-xs leading-relaxed text-black/40">

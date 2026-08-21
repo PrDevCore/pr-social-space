@@ -16,12 +16,16 @@ export async function GET(req: NextRequest) {
   }
 
   const next = req.nextUrl.searchParams.get("next");
+  const from =
+    req.nextUrl.searchParams.get("from") ||
+    req.cookies.get("li_oauth_from")?.value ||
+    "/auth/login";
   const state = randomBytes(24).toString("hex");
 
   const authUrl = buildAuthorizeUrl({ origin, state });
   if (!authUrl) {
     return NextResponse.redirect(
-      `${origin}/auth/login?error=linkedin_not_configured`
+      `${origin}${from.startsWith("/") ? from : "/auth/login"}?error=linkedin_not_configured`
     );
   }
 
@@ -36,6 +40,9 @@ export async function GET(req: NextRequest) {
   res.cookies.set("li_oauth_state", state, cookieOpts);
   if (next && next.startsWith("/")) {
     res.cookies.set("li_oauth_next", next, cookieOpts);
+  }
+  if (from.startsWith("/")) {
+    res.cookies.set("li_oauth_from", from, cookieOpts);
   }
   return res;
 }

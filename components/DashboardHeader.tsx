@@ -18,7 +18,7 @@ export default function DashboardHeader({
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <p className="text-sm text-black/50">Social Hub</p>
+        <p className="text-lg font-extrabold tracking-tight text-black">Social Hub</p>
         <h1 className="text-2xl font-semibold tracking-tight">
           Welcome back, {firstName}, your accounts are{" "}
           {optimized ? (

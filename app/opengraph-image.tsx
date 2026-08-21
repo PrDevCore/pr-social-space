@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import { SITE_URL } from "@/lib/site";
 
+const HOST = new URL(SITE_URL).host;
+
 export const alt = "Social Hub — One dashboard for every social account";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -44,9 +46,7 @@ export default function OpengraphImage() {
             <span style={{ fontSize: 52, fontWeight: 700, color: "#ffffff" }}>
               Social Hub
             </span>
-            <span style={{ fontSize: 26, color: "#cdd6ff" }}>
-              prsocialhub.space
-            </span>
+            <span style={{ fontSize: 26, color: "#cdd6ff" }}>{HOST}</span>
           </div>
         </div>
 

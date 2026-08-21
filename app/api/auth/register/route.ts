@@ -6,6 +6,7 @@ import {
   sessionCookieOptions,
 } from "@/lib/auth";
 import { createSession, createUser, findUserByEmail } from "@/lib/store";
+import { sendWelcomeEmail } from "@/lib/mail";
 
 export async function POST(req: NextRequest) {
   let body: { name?: string; email?: string; password?: string };
@@ -55,6 +56,10 @@ export async function POST(req: NextRequest) {
 
     const token = createSessionToken();
     await createSession(user.id, token);
+
+    // Best-effort: a failed welcome email must never block sign-up.
+    // Awaited so serverless runtimes don't freeze the send mid-flight.
+    await sendWelcomeEmail({ name: user.name, email: user.email });
 
     const res = NextResponse.json({ user });
     res.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());

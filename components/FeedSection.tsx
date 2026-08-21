@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FeedPost, SocialAccount, Story } from "@/lib/zernio";
 import { PlatformBadge } from "./PlatformIcon";
+import BoostModal from "./BoostModal";
 
 interface StoryGroup {
   accountId: string;
@@ -52,9 +53,18 @@ function AccountAvatar({ account, size }: { account: SocialAccount; size: number
   );
 }
 
-function PostCard({ post }: { post: FeedPost }) {
+function PostCard({
+  post,
+  account,
+  onBoost,
+}: {
+  post: FeedPost;
+  account: SocialAccount;
+  onBoost: (postId: string) => void;
+}) {
   const image = post.media.find((m) => m.type === "image");
   const isVideo = post.media.some((m) => m.type === "video" || m.type === "gif");
+  const boostable = ["facebook", "instagram"].includes(account.platform);
   return (
     <article className="overflow-hidden rounded-xl border border-black/10 bg-white">
       {image && (
@@ -94,6 +104,17 @@ function PostCard({ post }: { post: FeedPost }) {
             {formatDate(post.publishedAt ?? post.createdAt)}
           </span>
         </div>
+        {boostable && (
+          <button
+            onClick={() => onBoost(post.id)}
+            className="mt-1 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-black/10 bg-black/5 px-3 py-1.5 text-xs font-semibold text-black/70 transition hover:bg-black hover:text-white"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+            </svg>
+            Boost this post
+          </button>
+        )}
       </div>
     </article>
   );
@@ -108,6 +129,7 @@ export default function FeedSection({
   const [data, setData] = useState<FeedData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [boostPostId, setBoostPostId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -267,7 +289,12 @@ export default function FeedSection({
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {posts.map((post) => (
-                      <PostCard key={post.id} post={post} />
+                      <PostCard
+                        key={post.id}
+                        post={post}
+                        account={account}
+                        onBoost={setBoostPostId}
+                      />
                     ))}
                   </div>
                 </div>
@@ -275,6 +302,18 @@ export default function FeedSection({
             </div>
           )}
         </div>
+      )}
+
+      {boostPostId && (
+        <BoostModal
+          postId={boostPostId}
+          accounts={accounts}
+          onClose={() => setBoostPostId(null)}
+          onCreated={() => {
+            setBoostPostId(null);
+            load();
+          }}
+        />
       )}
     </section>
   );

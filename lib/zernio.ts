@@ -809,6 +809,257 @@ export interface FollowerStats {
   granularity?: string;
 }
 
+/* --------------------------- Ads / Boost -------------------------------- */
+/* Paid promotion through Zernio's unified /v1/ads API. Users first connect an
+ * ads account (GET /v1/connect/{platform}/ads), then boost an already-published
+ * post into a campaign (POST /v1/ads/boost). Requires the Ads add-on on the
+ * Zernio side (included on usage-based plans); boost currently targets Meta
+ * (facebook / instagram) accounts. All routes call through here server-side —
+ * the API key never reaches the browser. */
+
+/** Platform the posting account lives on when linking an ads account. */
+export type AdsConnectPlatform =
+  | "facebook"
+  | "instagram"
+  | "linkedin"
+  | "tiktok"
+  | "twitter"
+  | "pinterest"
+  | "googleads";
+
+/** Ads account platform stored by Zernio after the connect flow. */
+export type AdsPlatform =
+  | "metaads"
+  | "googleads"
+  | "tiktokads"
+  | "linkedinads"
+  | "pinterestads"
+  | "xads";
+
+export type AdStatus =
+  | "active"
+  | "paused"
+  | "pending_review"
+  | "rejected"
+  | "completed"
+  | "cancelled"
+  | "error";
+
+export type BoostGoal =
+  | "engagement"
+  | "traffic"
+  | "awareness"
+  | "video_views"
+  | "lead_generation"
+  | "conversions"
+  | "app_promotion";
+
+export interface AdsAccount {
+  id: string; // platform ad account id (e.g. act_123 for Meta)
+  name: string;
+  currency?: string;
+  status?: string;
+  accountStatus?: string | number;
+  selectable?: boolean;
+  minimumDailyBudget?: number;
+  timezoneName?: string;
+  unusableReason?: string | null;
+}
+
+export interface AdMetrics {
+  spend?: number;
+  impressions?: number;
+  reach?: number;
+  clicks?: number;
+  ctr?: number;
+  cpc?: number;
+  cpm?: number;
+  engagement?: number;
+  conversions?: number;
+  videoPlayActions?: number;
+}
+
+export interface AdCampaign {
+  platformCampaignId: string;
+  platform: string;
+  campaignName: string;
+  status: AdStatus;
+  adCount: number;
+  budget?: { amount?: number; type?: string } | null;
+  campaignBudget?: { amount?: number; type?: string } | null;
+  budgetLevel?: string | null;
+  currency?: string | null;
+  metrics?: AdMetrics;
+  platformAdAccountId?: string;
+  platformAdAccountName?: string | null;
+  accountId?: string;
+  profileId?: string;
+  earliestAd?: string;
+  latestAd?: string;
+}
+
+export interface Ad {
+  id: string; // Zernio ad _id
+  name: string;
+  platform: string;
+  status: AdStatus;
+  configuredStatus?: string | null;
+  adType?: string;
+  goal?: string;
+  budget?: { amount?: number; type?: string } | null;
+  metrics?: AdMetrics | null;
+  platformAdId?: string;
+  platformAdAccountId?: string;
+  platformCampaignId?: string;
+  platformAdSetId?: string;
+  campaignName?: string;
+  adSetName?: string;
+  creative?: {
+    thumbnailUrl?: string | null;
+    imageUrl?: string;
+    linkUrl?: string;
+    body?: string;
+  } | null;
+  schedule?: { startDate?: string; endDate?: string } | null;
+  rejectionReason?: string;
+  createdAt?: string;
+}
+
+/** GET /v1/connect/{platform}/ads — OAuth URL for linking an ads account. */
+export async function connectAdsAccount(params: {
+  platform: AdsConnectPlatform;
+  profileId: string;
+  accountId?: string;
+  redirectUrl: string;
+}) {
+  const p = new URLSearchParams({
+    profileId: params.profileId,
+    redirect_url: params.redirectUrl,
+  });
+  if (params.accountId) p.set("accountId", params.accountId);
+  return zernioFetch<{ authUrl?: string; alreadyConnected?: boolean }>(
+    `/connect/${params.platform}/ads?${p.toString()}`
+  );
+}
+
+/** GET /v1/ads/accounts — platform ad accounts available for one social account. */
+export async function listAdsAccounts(accountId: string, limit = 50): Promise<AdsAccount[]> {
+  const { accounts } = await zernioFetch<{ accounts?: AdsAccount[] }>(
+    `/ads/accounts?${qs({ accountId, limit })}`
+  );
+  return accounts ?? [];
+}
+
+export interface BoostPostParams {
+  postId: string; // Zernio post id of the published post to promote
+  accountId: string; // Zernio social account id the ad runs for
+  adAccountId: string; // platform ad account id (e.g. act_123)
+  name: string;
+  goal: BoostGoal;
+  budget: { amount: number; type: "daily" | "lifetime" };
+  currency?: string;
+  startDate?: string;
+  endDate?: string;
+  linkUrl?: string;
+  callToAction?: string;
+  targeting?: {
+    ageMin?: number;
+    ageMax?: number;
+    gender?: "all" | "male" | "female";
+    countries?: string[];
+  };
+}
+
+/**
+ * POST /v1/ads/boost — create a paid ad from an existing published post,
+ * keeping the post's engagement. NOT idempotent, so we always send a fresh
+ * Idempotency-Key (a retry with the same key would replay the original 201).
+ */
+export async function boostPost(params: BoostPostParams) {
+  const body: Record<string, unknown> = {
+    postId: params.postId,
+    accountId: params.accountId,
+    adAccountId: params.adAccountId,
+    name: params.name,
+    goal: params.goal,
+    budget: params.budget,
+  };
+  if (params.currency) body.currency = params.currency;
+  if (params.startDate || params.endDate) {
+    body.schedule = {
+      ...(params.startDate ? { startDate: params.startDate } : {}),
+      ...(params.endDate ? { endDate: params.endDate } : {}),
+    };
+  }
+  if (params.linkUrl && params.callToAction) {
+    body.linkUrl = params.linkUrl;
+    body.callToAction = params.callToAction;
+  }
+  if (params.targeting && Object.keys(params.targeting).length) {
+    body.targeting = params.targeting;
+  }
+
+  const { ad } = await zernioFetch<{ ad: Ad }>("/ads/boost", {
+    method: "POST",
+    headers: { "Idempotency-Key": randomUUID() },
+    body: JSON.stringify(body),
+  });
+  return ad;
+}
+
+/** GET /v1/ads — this user's ads (Zernio-created + platform-discovered). */
+export async function listAds(profileId: string, limit = 100): Promise<Ad[]> {
+  const { ads } = await zernioFetch<{ ads?: Ad[] }>(
+    `/ads?${qs({ profileId, limit })}`
+  );
+  return ads ?? [];
+}
+
+/** GET /v1/ads/campaigns — virtual campaign rollups over the user's ads. */
+export async function listAdCampaigns(profileId: string, limit = 50): Promise<AdCampaign[]> {
+  const { campaigns } = await zernioFetch<{ campaigns?: AdCampaign[] }>(
+    `/ads/campaigns?${qs({ profileId, limit })}`
+  );
+  return campaigns ?? [];
+}
+
+/** PUT /v1/ads/{adId}/status — pause or resume a single ad. */
+export async function setAdStatus(adId: string, status: "active" | "paused") {
+  return zernioFetch<{ updated?: number; skipped?: number; message?: string }>(
+    `/ads/${encodeURIComponent(adId)}/status`,
+    { method: "PUT", body: JSON.stringify({ status }) }
+  );
+}
+
+/** PUT /v1/ads/campaigns/{campaignId}/status — pause or resume a whole campaign. */
+export async function setAdCampaignStatus(
+  campaignId: string,
+  status: "active" | "paused",
+  platform: string
+) {
+  return zernioFetch<{
+    status?: string;
+    updated?: number;
+    skipped?: number;
+    skippedReasons?: string[];
+  }>(`/ads/campaigns/${encodeURIComponent(campaignId)}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ status, platform }),
+  });
+}
+
+/** GET /v1/ads/{adId}/analytics — ad-level performance (defaults to 90d). */
+export async function getAdAnalytics(
+  adId: string,
+  opts: { from?: string; to?: string } = {}
+) {
+  return zernioFetch<{
+    summary?: AdMetrics;
+    timeline?: Array<{ date?: string; metrics?: AdMetrics }>;
+    backfillPending?: boolean;
+  }>(`/ads/${encodeURIComponent(adId)}/analytics?${qs({ fromDate: opts.from, toDate: opts.to })}`);
+}
+
 export interface AnalyticsPayload {
   overview?: AnalyticsOverview;
   posts: AnalyticsPost[];

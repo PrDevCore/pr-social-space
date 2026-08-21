@@ -39,6 +39,15 @@ interface UserRecord {
   planExpiresAt?: string;
   /** LinkedIn OpenID `sub` when the user signed in (or was created) via LinkedIn. */
   linkedinSub?: string;
+  /** The user's saved billing-currency preference (USD | NGN | GBP). */
+  preferredCurrency?: "USD" | "NGN" | "GBP";
+  /** Onboarding completion state. */
+  onboarding: {
+    /** True after the user completes the initial setup wizard (connect accounts, set currency, etc.). */
+    completed: boolean;
+    /** Step the user last viewed (for resuming onboarding). */
+    lastStep?: "connect_accounts" | "set_currency" | "dashboard_tour" | "ads_boost";
+  };
 }
 
 interface SessionRecord {
@@ -64,6 +73,17 @@ export interface PublicUser {
   email: string;
   createdAt: string;
   plan: "free" | "business" | "pro" | "team";
+  /** True when the account has a usable password (false for LinkedIn-only logins). */
+  hasPassword: boolean;
+  /** Saved billing-currency preference (persisted across devices/sessions). */
+  preferredCurrency?: "USD" | "NGN" | "GBP";
+  /** Onboarding completion state. */
+  onboarding: {
+    /** True when the user has completed the initial setup wizard. */
+    completed: boolean;
+    /** Step the user last viewed (for resuming onboarding). */
+    lastStep?: "connect_accounts" | "set_currency" | "dashboard_tour" | "ads_boost";
+  };
 }
 
 function toPublicUser(u: UserRecord): PublicUser {
@@ -73,6 +93,12 @@ function toPublicUser(u: UserRecord): PublicUser {
     email: u.email,
     createdAt: u.createdAt,
     plan: u.plan ?? "free",
+    hasPassword: !u.passwordHash.startsWith("oauth_linkedin:"),
+    preferredCurrency: u.preferredCurrency,
+    onboarding: {
+      completed: u.onboarding?.completed ?? false,
+      lastStep: u.onboarding?.lastStep,
+    },
   };
 }
 
@@ -88,6 +114,10 @@ export async function createUser(input: {
     passwordHash: input.passwordHash,
     createdAt: new Date().toISOString(),
     plan: "free",
+    onboarding: {
+      completed: false,
+      lastStep: "connect_accounts",
+    },
   };
   await users().doc(user.id).set(user);
   return toPublicUser(user);
@@ -127,6 +157,10 @@ export async function createLinkedInUser(input: {
     email: input.email.trim().toLowerCase(),
     passwordHash: `oauth_linkedin:${input.sub}`,
     linkedinSub: input.sub,
+    onboarding: {
+      completed: false,
+      lastStep: "connect_accounts",
+    },
     createdAt: new Date().toISOString(),
     plan: "free",
   };
@@ -144,9 +178,30 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
   return toPublicUser(snap.data() as UserRecord);
 }
 
+/** Full user record including the password hash (server-side operations only). */
+export async function getUserByIdWithHash(
+  id: string
+): Promise<(PublicUser & { passwordHash: string }) | null> {
+  const snap = await users().doc(id).get();
+  if (!snap.exists) return null;
+  const rec = snap.data() as UserRecord;
+  return { ...toPublicUser(rec), passwordHash: rec.passwordHash };
+}
+
+export type OnboardingStepId =
+  UserRecord["onboarding"] extends { lastStep?: infer S } ? S : never;
+
 export async function updateUser(
   id: string,
-  patch: { name?: string }
+  patch: {
+    name?: string;
+    email?: string;
+    preferredCurrency?: "USD" | "NGN" | "GBP";
+    onboarding?: {
+      completed?: boolean;
+      lastStep?: OnboardingStepId;
+    };
+  }
 ): Promise<PublicUser | null> {
   const doc = users().doc(id);
   const snap = await doc.get();
@@ -155,6 +210,14 @@ export async function updateUser(
   const updated: UserRecord = {
     ...current,
     name: patch.name?.trim() || current.name,
+    email: patch.email?.trim().toLowerCase() || current.email,
+    preferredCurrency: patch.preferredCurrency ?? current.preferredCurrency,
+    onboarding: {
+      completed:
+        patch.onboarding?.completed ?? current.onboarding?.completed ?? false,
+      lastStep:
+        patch.onboarding?.lastStep ?? current.onboarding?.lastStep ?? undefined,
+    },
   };
   await doc.set(updated);
   return toPublicUser(updated);
@@ -222,6 +285,17 @@ interface PaymentRecord {
   settledAt?: string;
 }
 
+export interface PaymentHistoryEntry {
+  txRef: string;
+  planId: "free" | "business" | "pro" | "team";
+  amount: number;
+  currency: string;
+  status: "pending" | "success";
+  flutterwaveTransactionId?: string;
+  createdAt: string;
+  settledAt?: string;
+}
+
 /** Record a checkout that was started (pending) or settled (success). */
 export async function recordPayment(record: PaymentRecord) {
   await payments().doc(record.txRef).set(record);
@@ -248,6 +322,16 @@ export async function hasPriorPayment(userId: string): Promise<boolean> {
     .limit(1)
     .get();
   return !snap.empty;
+}
+
+/** The user's checkout history, newest first (pending + settled). */
+export async function listPaymentsForUser(
+  userId: string
+): Promise<PaymentHistoryEntry[]> {
+  const snap = await payments().where("userId", "==", userId).get();
+  return snap.docs
+    .map((d) => d.data() as PaymentHistoryEntry)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 /* ------------------------------- Sessions ------------------------------- */

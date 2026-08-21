@@ -12,7 +12,10 @@ const config: Config = {
         ink: "#111318",
         paper: "#F7F7F5",
         navy: "#0B1A2A",
-        accent: "#1E90FF",
+        /** Brand accent — deep indigo; pairs with the violet gradient end. */
+        accent: "#4F46E5",
+        /** Secondary gradient stop used for brand CTAs and glows. */
+        accent2: "#8B5CF6",
       },
     },
   },

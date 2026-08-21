@@ -4,13 +4,21 @@
  * "Continue with LinkedIn" — a full-page redirect that kicks off the OAuth
  * flow at /api/auth/linkedin. Styled to mirror the theme toggle / inputs.
  */
-export default function LinkedInButton({ next }: { next?: string }) {
-  const target = new URL("/api/auth/linkedin", window.location.origin);
-  if (next && next.startsWith("/")) target.searchParams.set("next", next);
+export default function LinkedInButton({
+  next,
+  from,
+}: {
+  next?: string;
+  from?: string;
+}) {
+  const params = new URLSearchParams();
+  if (next && next.startsWith("/")) params.set("next", next);
+  if (from && from.startsWith("/")) params.set("from", from);
+  const qs = params.toString();
 
   return (
     <a
-      href={target.toString()}
+      href={qs ? `/api/auth/linkedin?${qs}` : "/api/auth/linkedin"}
       className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-black/10 bg-white py-3 text-sm font-semibold text-black/80 shadow-sm transition hover:bg-black/5"
     >
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

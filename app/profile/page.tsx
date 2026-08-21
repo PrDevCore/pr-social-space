@@ -3,6 +3,8 @@ import Image from "next/image";
 import { getCurrentUser } from "@/lib/auth";
 import ProfileForm from "@/components/ProfileForm";
 import PlanCard from "@/components/PlanCard";
+import PasswordForm from "@/components/PasswordForm";
+import PaymentHistory from "@/components/PaymentHistory";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -54,7 +56,18 @@ export default async function ProfilePage() {
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-black/50">
               Edit details
             </h2>
-            <ProfileForm name={user.name} />
+            <ProfileForm
+              name={user.name}
+              email={user.email}
+              hasPassword={user.hasPassword}
+            />
+          </div>
+
+          <div>
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-black/50">
+              Sign-in &amp; security
+            </h2>
+            <PasswordForm hasPassword={user.hasPassword} />
           </div>
 
           <div>
@@ -62,6 +75,9 @@ export default async function ProfilePage() {
               Billing
             </h2>
             <PlanCard />
+            <div className="mt-4">
+              <PaymentHistory />
+            </div>
           </div>
 
           <div className="card">
@@ -78,6 +94,16 @@ export default async function ProfilePage() {
                 <dd>{user.email}</dd>
               </div>
               <div className="flex justify-between gap-4">
+                <dt className="text-black/50">Password</dt>
+                <dd>
+                  {user.hasPassword ? (
+                    <span className="text-green-600">Set</span>
+                  ) : (
+                    <span className="text-amber-600">Not set (LinkedIn sign-in)</span>
+                  )}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
                 <dt className="text-black/50">Joined</dt>
                 <dd>{joined}</dd>
               </div>
@@ -90,7 +116,7 @@ export default async function ProfilePage() {
                 height={20}
                 className="rounded"
               />
-              Secured with scrypt password hashing and encrypted sessions.
+              Secured with Argon2id password hashing and encrypted sessions.
             </div>
           </div>
         </div>

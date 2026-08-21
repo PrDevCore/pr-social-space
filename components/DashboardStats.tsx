@@ -87,7 +87,7 @@ export default function DashboardStats({
         label="Accounts"
         value={accounts.length}
         hint={has ? "connected" : "none yet"}
-        gradient="linear-gradient(135deg,#1E90FF,#7C5CFF)"
+        gradient="linear-gradient(135deg,#4F46E5,#8B5CF6)"
         status={apiError ? "error" : has ? "optimal" : "attention"}
         icon={
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -99,7 +99,7 @@ export default function DashboardStats({
         label="Platforms"
         value={platforms}
         hint="in use"
-        gradient="linear-gradient(135deg,#0EA5E9,#7C5CFF)"
+        gradient="linear-gradient(135deg,#0EA5E9,#8B5CF6)"
         status={apiError ? "error" : has ? "optimal" : "attention"}
         icon={
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

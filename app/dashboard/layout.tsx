@@ -11,11 +11,11 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="min-h-screen">
-      <header className="border-b border-black/10 bg-[#33353e] text-white">
+      <header className="brand-header border-b border-black/10 bg-[#d4a373] text-[#3b2314]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 font-semibold tracking-tight"
+            className="flex items-center gap-2 font-extrabold tracking-tight"
           >
             <Image
               src="/logo.png"
@@ -31,7 +31,7 @@ export default function DashboardLayout({
             <RegionToggle />
             <Link
               href="/content"
-              className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+              className="flex items-center gap-1.5 rounded-xl border border-black/15 bg-white/40 px-3 py-1.5 text-xs font-medium text-[#3b2314] hover:bg-white/60"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -40,7 +40,7 @@ export default function DashboardLayout({
             </Link>
             <Link
               href="/profile"
-              className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20"
+              className="flex items-center gap-1.5 rounded-xl border border-black/15 bg-white/40 px-3 py-1.5 text-xs font-medium text-[#3b2314] hover:bg-white/60"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M12 7a4 4 0 11-8 0 4 4 0 018 0z" />

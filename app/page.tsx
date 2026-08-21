@@ -151,13 +151,13 @@ export default async function Home() {
         />
       ))}
       {/* Sticky nav */}
-      <header className="sticky top-0 z-40 border-b border-black/10 bg-white/80 backdrop-blur [&_button]:!border-black/40 [&_button]:!text-black [&_button]:hover:!bg-black/5 [&_svg]:!text-black">
+      <header className="brand-header sticky top-0 z-40 border-b border-black/10 bg-[#d4a373]/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-          <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight text-black">
-            <Image src="/logo.png" alt="Social Hub logo" width={32} height={32} className="h-8 w-8 rounded-lg" />
-            Social Hub
+          <Link href="/" className="flex items-center gap-2 font-extrabold tracking-tight text-black">
+            <Image src="/logo.png" alt="Social Hub logo" width={36} height={36} className="h-9 w-9 rounded-lg" />
+            <span className="text-lg">Social Hub</span>
           </Link>
-          <nav className="hidden items-center gap-6 text-sm text-black md:flex">
+          <nav className="hidden items-center gap-6 text-sm text-[#3b2314] md:flex">
             <a href="#features" className="hover:text-black/70">Features</a>
             <a href="#how-it-works" className="hover:text-black/70">How it works</a>
             <a href="#pricing" className="hover:text-black/70">Pricing</a>
@@ -168,13 +168,13 @@ export default async function Home() {
             <RegionToggle />
             <Link
               href="/auth/login"
-              className="hidden rounded-xl border border-black px-3.5 py-1.5 text-sm font-medium text-black transition hover:bg-black/5 sm:block"
+              className="hidden rounded-xl border border-[#3b2314] px-3.5 py-1.5 text-sm font-medium text-[#3b2314] transition hover:bg-black/10 sm:block"
             >
               Sign in
             </Link>
             <Link
               href="/auth/register"
-              className="rounded-xl border border-black bg-black px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-black/80"
+              className="rounded-xl border border-[#3b2314] bg-[#3b2314] px-3.5 py-1.5 text-sm font-medium text-white transition hover:bg-black/80"
             >
               Start free
             </Link>
