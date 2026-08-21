@@ -8,6 +8,7 @@ import RegionToggle from "@/components/RegionToggle";
 import AnimatedMockup from "@/components/landing/AnimatedMockup";
 import MetricsCounter from "@/components/landing/MetricsCounter";
 import PricingSection from "@/components/landing/PricingSection";
+import TrustpilotWidget from "@/components/TrustpilotWidget";
 
 // If the user already has a session, skip straight to /dashboard.
 export default async function Home() {
@@ -288,6 +289,11 @@ export default async function Home() {
             </details>
           ))}
         </div>
+      </section>
+
+      {/* Social proof */}
+      <section className="mx-auto max-w-3xl px-6 pb-20">
+        <TrustpilotWidget />
       </section>
 
       {/* Footer */}
