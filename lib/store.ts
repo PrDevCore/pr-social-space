@@ -207,18 +207,30 @@ export async function updateUser(
   const snap = await doc.get();
   if (!snap.exists) return null;
   const current = snap.data() as UserRecord;
+
+  // Build the onboarding object without ever assigning `undefined`:
+  // Firestore rejects documents containing undefined field values.
+  const onboarding: UserRecord["onboarding"] = {
+    completed:
+      patch.onboarding?.completed ?? current.onboarding?.completed ?? false,
+  };
+  const nextLastStep =
+    patch.onboarding?.lastStep !== undefined
+      ? patch.onboarding.lastStep
+      : current.onboarding?.lastStep;
+  if (nextLastStep !== undefined) {
+    onboarding.lastStep = nextLastStep;
+  }
+
   const updated: UserRecord = {
     ...current,
     name: patch.name?.trim() || current.name,
     email: patch.email?.trim().toLowerCase() || current.email,
-    preferredCurrency: patch.preferredCurrency ?? current.preferredCurrency,
-    onboarding: {
-      completed:
-        patch.onboarding?.completed ?? current.onboarding?.completed ?? false,
-      lastStep:
-        patch.onboarding?.lastStep ?? current.onboarding?.lastStep ?? undefined,
-    },
+    onboarding,
   };
+  if (patch.preferredCurrency !== undefined) {
+    updated.preferredCurrency = patch.preferredCurrency;
+  }
   await doc.set(updated);
   return toPublicUser(updated);
 }
