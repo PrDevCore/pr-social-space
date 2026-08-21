@@ -121,7 +121,7 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
 };
 
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID ?? "GTM-T2CWZHMK";
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID ?? "GTM-NC7RSW92";
 
 export default function RootLayout({
   children,
