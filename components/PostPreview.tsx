@@ -434,8 +434,8 @@ function TikTokPreview({
   account: SocialAccount;
 }) {
   return (
-    <div className="flex gap-3 border border-black/10 bg-white p-3">
-      <div className="w-[200px] shrink-0 overflow-hidden rounded-xl bg-black/5">
+    <div className="flex flex-col gap-3 border border-black/10 bg-white p-3 md:flex-row">
+      <div className="mx-auto w-full max-w-[220px] shrink-0 overflow-hidden rounded-xl bg-black/5 md:mx-0 md:w-[200px]">
         {mediaUrls.length > 0 ? (
           <div className="relative">
             <MediaBlock mediaUrls={mediaUrls} aspect="9 / 16" rounded={false} />

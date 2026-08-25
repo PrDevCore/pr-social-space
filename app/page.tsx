@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { SITE_URL } from "@/lib/site";
 import ThemeToggle from "@/components/ThemeToggle";
 import RegionToggle from "@/components/RegionToggle";
+import MobileMenu from "@/components/landing/MobileMenu";
 import AnimatedMockup from "@/components/landing/AnimatedMockup";
 import MetricsCounter from "@/components/landing/MetricsCounter";
 import PricingSection from "@/components/landing/PricingSection";
@@ -167,9 +168,10 @@ export default async function Home() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <RegionToggle />
+            <MobileMenu />
             <Link
               href="/auth/login"
-              className="hidden rounded-xl border border-[#3b2314] px-3.5 py-1.5 text-sm font-medium text-[#3b2314] transition hover:bg-black/10 sm:block"
+              className="hidden rounded-xl border border-[#3b2314] px-3.5 py-2 text-sm font-medium text-[#3b2314] transition hover:bg-black/10 sm:block"
             >
               Sign in
             </Link>
@@ -294,6 +296,27 @@ export default async function Home() {
       {/* Social proof */}
       <section className="mx-auto max-w-3xl px-6 pb-20">
         <TrustpilotWidget />
+      </section>
+
+      {/* Product Hunt */}
+      <section className="mx-auto max-w-3xl px-6 pb-16">
+        <div className="flex justify-center">
+          <a
+            href="https://www.producthunt.com/products/social-hub-3/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-social&#0045;hub&#0045;3"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1292482&theme=light"
+              alt="Social Hub - One dashboard. Every social account. One click to post. | Product Hunt"
+              width={250}
+              height={54}
+              loading="lazy"
+              decoding="async"
+            />
+          </a>
+        </div>
       </section>
 
       {/* Footer */}

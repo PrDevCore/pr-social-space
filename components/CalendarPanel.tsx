@@ -60,6 +60,7 @@ export default function CalendarPanel() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overKey, setOverKey] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [moveId, setMoveId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -145,6 +146,7 @@ export default function CalendarPanel() {
       setBusyKey(null);
       setDragId(null);
       setOverKey(null);
+      setMoveId(null);
     }
   }
 
@@ -184,8 +186,9 @@ export default function CalendarPanel() {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            aria-label="Previous month"
             onClick={() => setMonthOffset((o) => o - 1)}
-            className="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-sm hover:bg-black/5"
+            className="rounded-lg border border-black/10 bg-white px-3.5 py-2 text-sm hover:bg-black/5"
           >
             ←
           </button>
@@ -194,8 +197,9 @@ export default function CalendarPanel() {
           </h2>
           <button
             type="button"
+            aria-label="Next month"
             onClick={() => setMonthOffset((o) => o + 1)}
-            className="rounded-lg border border-black/10 bg-white px-3 py-1.5 text-sm hover:bg-black/5"
+            className="rounded-lg border border-black/10 bg-white px-3.5 py-2 text-sm hover:bg-black/5"
           >
             →
           </button>
@@ -203,7 +207,7 @@ export default function CalendarPanel() {
             <button
               type="button"
               onClick={() => setMonthOffset(0)}
-              className="text-sm text-accent hover:underline"
+              className="min-h-[36px] px-1 text-sm text-accent hover:underline"
             >
               Today
             </button>
@@ -219,6 +223,19 @@ export default function CalendarPanel() {
         </div>
       )}
 
+      {moveId && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-black/80">
+          <span>Tap any day to move the selected post (keeps its original time of day).</span>
+          <button
+            type="button"
+            onClick={() => setMoveId(null)}
+            className="rounded-lg border border-black/15 px-3 py-1.5 text-xs font-medium hover:bg-black/5"
+          >
+            Cancel move
+          </button>
+        </div>
+      )}
+
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       {loading ? (
@@ -227,7 +244,10 @@ export default function CalendarPanel() {
         <div className="card p-0 overflow-hidden">
           <div className="grid grid-cols-7 border-b border-black/10 bg-black/[0.02] text-center text-xs font-medium text-black/50">
             {DAY_LABELS.map((d) => (
-              <div key={d} className="py-2">{d}</div>
+              <div key={d} className="py-2">
+                <span className="sm:hidden">{d[0]}</span>
+                <span className="hidden sm:inline">{d}</span>
+              </div>
             ))}
           </div>
           <div className="grid grid-cols-7">
@@ -250,11 +270,16 @@ export default function CalendarPanel() {
                     const id = e.dataTransfer.getData("text/post-id");
                     if (id) reschedule(id, day);
                   }}
-                  className={`min-h-24 border-b border-r border-black/5 p-1.5 transition-colors last:border-r-0 ${
+                  onClick={() => {
+                    if (moveId && !posts.some((p) => p.id === moveId)) {
+                      reschedule(moveId, day);
+                    }
+                  }}
+                  className={`min-h-[4.5rem] border-b border-r border-black/5 p-1 transition-colors last:border-r-0 sm:min-h-24 sm:p-1.5 ${
                     inMonth ? "" : "bg-black/[0.02]"
                   } ${isToday ? "bg-accent/5" : ""} ${
                     overKey === key ? "bg-accent/10 ring-2 ring-accent/40" : ""
-                  }`}
+                  } ${moveId && !posts.some((p) => p.id === moveId) ? "cursor-pointer hover:bg-accent/10" : ""}`}
                 >
                   <div className="flex items-center justify-between">
                     <span
@@ -280,6 +305,8 @@ export default function CalendarPanel() {
                       return (
                         <div
                           key={p.id}
+                          role="button"
+                          tabIndex={0}
                           draggable
                           onDragStart={(e) => {
                             setDragId(p.id);
@@ -290,10 +317,27 @@ export default function CalendarPanel() {
                             setDragId(null);
                             setOverKey(null);
                           }}
-                          className={`group cursor-grab rounded-md border border-black/10 bg-white px-1.5 py-1 text-[10px] leading-tight shadow-sm active:cursor-grabbing ${
-                            dragId === p.id ? "opacity-50" : ""
-                          }`}
-                          title="Drag to another day to reschedule"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (moveId === p.id) {
+                              setMoveId(null);
+                            } else {
+                              setMoveId(p.id);
+                              setNotice(null);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setMoveId(moveId === p.id ? null : p.id);
+                            }
+                          }}
+                          className={`group cursor-pointer rounded-md border px-1.5 py-1 text-[10px] leading-tight shadow-sm ${
+                            moveId === p.id
+                              ? "border-accent bg-accent/10 ring-2 ring-accent/40"
+                              : "border-black/10 bg-white"
+                          } ${dragId === p.id ? "opacity-50" : ""}`}
+                          title="Tap, then tap another day to reschedule (or drag)"
                         >
                           <div className="flex items-center gap-1">
                             <span
@@ -310,7 +354,7 @@ export default function CalendarPanel() {
                               e.stopPropagation();
                               cancelPost(p.id);
                             }}
-                            className="hidden text-red-600 group-hover:inline"
+                            className="mt-0.5 inline-block rounded px-1 py-0.5 font-medium text-red-600 hover:bg-red-50"
                             title="Cancel this scheduled post"
                           >
                             cancel

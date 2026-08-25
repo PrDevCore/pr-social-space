@@ -168,7 +168,7 @@ export default function BestTimeCard({ onPick, compact = false }: Props) {
               key={`${s.day_of_week}-${s.hour}`}
               type="button"
               onClick={() => pick(s)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+              className={`rounded-full border px-3.5 py-2 text-xs font-medium transition ${
                 selected === s
                   ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                   : "border-gray-300 text-gray-600 hover:border-emerald-400 dark:border-gray-700 dark:text-gray-300"
@@ -180,32 +180,34 @@ export default function BestTimeCard({ onPick, compact = false }: Props) {
         </div>
       )}
 
-      <div
-        className="grid gap-0.5"
-        style={{ gridTemplateColumns: "2.5rem repeat(24, minmax(0, 1fr))" }}
-      >
-        {DAYS.map((day, d) => (
-          <div key={day} className="contents">
-            <div className="flex h-5 items-center text-[10px] font-medium text-gray-400 dark:text-gray-500">
-              {day}
+      <div className="-mx-1 overflow-x-auto px-1 pb-1">
+        <div
+          className="grid min-w-[520px] gap-0.5"
+          style={{ gridTemplateColumns: "2.5rem repeat(24, minmax(18px, 1fr))" }}
+        >
+          {DAYS.map((day, d) => (
+            <div key={day} className="contents">
+              <div className="flex h-7 items-center text-[10px] font-medium text-gray-400 dark:text-gray-500 sm:h-5">
+                {day}
+              </div>
+              {HOURS.map((h) => {
+                const slot = byDay[d][h];
+                return (
+                  <button
+                    key={`${day}-${h}`}
+                    type="button"
+                    title={slot ? `${slotLabel(slot)} · avg engagement ${slot.avg_engagement}` : `${day} ${h}:00 (UTC)`}
+                    disabled={!slot}
+                    onClick={() => slot && pick(slot)}
+                    className={`h-7 rounded-[3px] ${cellColor(slot?.avg_engagement || 0)} ${
+                      slot ? "cursor-pointer hover:ring-2 hover:ring-emerald-400" : "cursor-default"
+                    } ${selected === slot ? "ring-2 ring-emerald-500" : ""} sm:h-5`}
+                  />
+                );
+              })}
             </div>
-            {HOURS.map((h) => {
-              const slot = byDay[d][h];
-              return (
-                <button
-                  key={`${day}-${h}`}
-                  type="button"
-                  title={slot ? `${slotLabel(slot)} · avg engagement ${slot.avg_engagement}` : `${day} ${h}:00 (UTC)`}
-                  disabled={!slot}
-                  onClick={() => slot && pick(slot)}
-                  className={`h-5 rounded-[3px] ${cellColor(slot?.avg_engagement || 0)} ${
-                    slot ? "cursor-pointer hover:ring-2 hover:ring-emerald-400" : "cursor-default"
-                  } ${selected === slot ? "ring-2 ring-emerald-500" : ""}`}
-                />
-              );
-            })}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {selected && onPick && (

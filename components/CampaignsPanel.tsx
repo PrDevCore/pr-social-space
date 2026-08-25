@@ -222,7 +222,7 @@ export default function CampaignsPanel({
                   </p>
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+              <div className="mt-3 grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
                 <div className="rounded-lg bg-black/5 px-2 py-1.5">
                   <p className="text-sm font-semibold">{fmtCurrency(c.metrics?.spend)}</p>
                   <p className="text-[10px] text-black/50">Spend</p>

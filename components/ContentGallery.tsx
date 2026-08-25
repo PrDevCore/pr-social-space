@@ -67,7 +67,7 @@ function MediaTile({ item, onOpen }: { item: ContentItem; onOpen: () => void }) 
         </span>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-black/70 to-transparent p-2.5 pt-6 text-xs text-white transition duration-200 group-hover:translate-y-0">
+      <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-black/70 to-transparent p-2.5 pt-6 text-xs text-white transition duration-200 group-focus:translate-y-0 group-hover:translate-y-0 max-md:group-active:translate-y-0">
         <p className="line-clamp-2">{item.post.content || "No caption"}</p>
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <div className="flex gap-1">

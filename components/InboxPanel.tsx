@@ -294,7 +294,7 @@ export default function InboxPanel() {
                       onClick={() =>
                         openPost === c.id ? setOpenPost(null) : openThread(c)
                       }
-                      className="shrink-0 rounded-lg border border-black/10 px-2.5 py-1 text-xs font-medium hover:bg-black/5"
+                      className="shrink-0 rounded-lg border border-black/10 px-3 py-2 text-xs font-medium hover:bg-black/5"
                     >
                       {openPost === c.id ? "Close" : "Open thread"}
                     </button>
@@ -321,7 +321,7 @@ export default function InboxPanel() {
                             setReplyFor((p) => ({ ...p, ["post"]: e.target.value }))
                           }
                           placeholder="Reply to this post…"
-                          className="w-full rounded-lg border border-black/10 bg-white px-3 py-1.5 text-sm outline-none focus:border-accent"
+                          className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-accent"
                         />
                         <button
                           type="submit"
@@ -373,7 +373,7 @@ export default function InboxPanel() {
                                               `${key}-like`
                                             )
                                           }
-                                          className="rounded-full border border-black/10 px-2 py-0.5 text-xs font-medium hover:bg-black/5 disabled:opacity-50"
+                                          className="rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium hover:bg-black/5 disabled:opacity-50"
                                         >
                                           {comment.isLiked ? "❤️ Liked" : "♡ Like"}
                                         </button>
@@ -389,7 +389,7 @@ export default function InboxPanel() {
                                               `${key}-hide`
                                             )
                                           }
-                                          className="rounded-full border border-black/10 px-2 py-0.5 text-xs font-medium hover:bg-black/5 disabled:opacity-50"
+                                          className="rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium hover:bg-black/5 disabled:opacity-50"
                                         >
                                           {comment.isHidden ? "Hidden" : "Hide"}
                                         </button>
@@ -402,7 +402,7 @@ export default function InboxPanel() {
                                             [key]: p[key] ?? "",
                                           }))
                                         }
-                                        className="rounded-full border border-black/10 px-2 py-0.5 text-xs font-medium hover:bg-black/5"
+                                        className="rounded-full border border-black/10 px-3 py-1.5 text-xs font-medium hover:bg-black/5"
                                       >
                                         Reply
                                       </button>
@@ -437,7 +437,7 @@ export default function InboxPanel() {
                                         <button
                                           type="submit"
                                           disabled={busy === `${key}-reply` || !replyFor[key].trim()}
-                                          className="btn-primary !px-3 !py-1.5 text-xs"
+                          className="btn-primary !px-4 !py-2 text-xs"
                                         >
                                           {busy === `${key}-reply` ? "…" : "Reply"}
                                         </button>
