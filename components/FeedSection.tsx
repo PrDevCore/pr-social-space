@@ -42,6 +42,8 @@ function AccountAvatar({ account, size }: { account: SocialAccount; size: number
       alt=""
       style={{ width: size, height: size }}
       className="rounded-full object-cover ring-2 ring-white"
+      loading="lazy"
+      decoding="async"
     />
   ) : (
     <span
@@ -70,7 +72,7 @@ function PostCard({
       {image && (
         <div className="aspect-video w-full overflow-hidden bg-black/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+          <img src={image.url} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
         </div>
       )}
       {!image && isVideo && (

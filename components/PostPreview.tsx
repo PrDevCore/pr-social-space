@@ -51,6 +51,8 @@ function Avatar({
       src={account.avatar_url}
       alt=""
       style={{ width: size, height: size }}
+      loading="lazy"
+      decoding="async"
       className={base}
     />
   ) : (

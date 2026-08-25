@@ -48,6 +48,8 @@ export default function AccountCard({
               src={account.avatar_url}
               alt=""
               className="h-9 w-9 rounded-full object-cover ring-2 ring-white"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <span

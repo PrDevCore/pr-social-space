@@ -48,7 +48,7 @@ function PostCard({ post }: { post: FeedPost }) {
       {image ? (
         <div className="relative aspect-video w-full overflow-hidden bg-black/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image.url} alt="" className="h-full w-full object-cover" loading="lazy" />
+          <img src={image.url} alt="" className="h-full w-full object-cover" loading="lazy" decoding="async" />
           {isVideo && <LiveBadge />}
         </div>
       ) : (

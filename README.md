@@ -125,3 +125,34 @@ To get indexed after deploying:
    `NEXT_PUBLIC_BING_SITE_VERIFICATION`.
 3. Make sure `APP_URL` is also set to your public domain so OAuth and
    Flutterwave billing redirects land on the same host.
+
+### Content hub
+
+`/blog` is a code-based content hub. Posts live in `content/blog/*.ts`
+(structured `ContentBlock[]`, no CMS or markdown deps), are registered in
+`lib/blog.ts`, and are statically generated at `/blog/<slug>` with per-post
+metadata, Open Graph images, BlogPosting + BreadcrumbList JSON-LD and an RSS
+feed at `/rss.xml`. New posts are picked up by the sitemap automatically.
+To publish: add a file to `content/blog/`, register it in `lib/blog.ts`,
+deploy.
+
+There is also `/llms.txt` — a markdown product summary for AI answer engines
+(ChatGPT, Perplexity, etc.).
+
+## Recognition / off-page SEO checklist
+
+Off-platform actions that earn backlinks, brand mentions and rankings:
+
+- [ ] Google Search Console + Bing Webmaster submitted (see above)
+- [ ] Product Hunt launch page kept current; review badge is on the landing footer
+- [ ] List on directories: AlternativeTo, G2, Capterra, Futurepedia, ToolFinder,
+      SaaSHub — each is a followed backlink and a discovery surface
+- [ ] Publish the seeded comparison post ("Social Hub vs Buffer vs Hootsuite vs
+      Later") and pitch it as a Buffer/Hootsuite alternative on Reddit (r/socialmedia),
+      Indie Hackers and relevant communities — genuinely, not spammy
+- [ ] Answer Quora/Reddit questions about scheduling TikTok/Instagram posts with a
+      link to the matching guide where allowed
+- [ ] Add the domain to Google Business Profile if applicable
+- [ ] Reach out to "best social media tools" listicle authors for inclusion
+- [ ] Keep shipping blog posts monthly — internal links from guides to
+      `/auth/register` convert organic traffic

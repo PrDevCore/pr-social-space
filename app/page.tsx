@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL, absoluteUrl } from "@/lib/site";
 import ThemeToggle from "@/components/ThemeToggle";
 import RegionToggle from "@/components/RegionToggle";
 import MobileMenu from "@/components/landing/MobileMenu";
@@ -135,6 +135,53 @@ export default async function Home() {
       "@type": "WebSite",
       name: "Social Hub",
       url: SITE_URL,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Social Hub",
+      applicationCategory: "BusinessApplication",
+      applicationSubCategory: "Social Media Management Tool",
+      operatingSystem: "Web",
+      url: SITE_URL,
+      image: absoluteUrl("/opengraph-image"),
+      description:
+        "One dashboard for every social account. Compose, schedule, engage and report across TikTok, Instagram, X, LinkedIn, YouTube and more.",
+      featureList: [
+        "Multi-platform composer with live previews",
+        "Post scheduling with a visual calendar",
+        "Unified inbox for comments and DMs",
+        "AI caption and hashtag assistant",
+        "Best-time-to-post analytics heatmap",
+        "Competitor tracking",
+        "White-label PDF reports",
+      ],
+      offers: [
+        {
+          "@type": "Offer",
+          name: "Free",
+          price: "0",
+          priceCurrency: "USD",
+          url: absoluteUrl("/auth/register"),
+          category: "free",
+        },
+        {
+          "@type": "Offer",
+          name: "Business",
+          price: "12",
+          priceCurrency: "USD",
+          url: absoluteUrl("/auth/register"),
+          category: "monthly subscription",
+        },
+        {
+          "@type": "Offer",
+          name: "Pro",
+          price: "15",
+          priceCurrency: "USD",
+          url: absoluteUrl("/auth/register"),
+          category: "monthly subscription",
+        },
+      ],
     },
     {
       "@context": "https://schema.org",
@@ -327,9 +374,10 @@ export default async function Home() {
             Social Hub
           </div>
           <p>Powered by Zernio · © {new Date().getFullYear()}</p>
-          <nav className="flex gap-6">
+          <nav className="flex flex-wrap justify-center gap-6">
             <a href="#features" className="hover:text-black">Features</a>
             <a href="#pricing" className="hover:text-black">Pricing</a>
+            <Link href="/blog" className="hover:text-black">Blog</Link>
             <Link href="/auth/login" className="hover:text-black">Sign in</Link>
           </nav>
         </div>

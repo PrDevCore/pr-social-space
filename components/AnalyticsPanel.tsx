@@ -426,6 +426,8 @@ export default function AnalyticsPanel() {
                             src={p.thumbnailUrl}
                             alt=""
                             className="h-10 w-10 shrink-0 rounded-md object-cover"
+                            loading="lazy"
+                            decoding="async"
                           />
                         ) : (
                           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-400 dark:bg-gray-800">
