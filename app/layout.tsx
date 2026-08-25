@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     template: "%s | Social Hub",
   },
   description:
-    "Compose, schedule, engage and report across TikTok, Instagram, X, LinkedIn, YouTube and more — from one dashboard. AI captions, unified inbox, analytics and PDF reports.",
+    "Compose, schedule, engage and report across TikTok, Instagram, X, LinkedIn and more — from one dashboard. AI captions, inbox, analytics, PDF reports.",
   keywords: [
     "social media manager",
     "social media dashboard",
