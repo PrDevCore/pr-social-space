@@ -108,6 +108,7 @@ export const metadata: Metadata = {
       : {}),
   },
   other: {
+    "google-adsense-account": "ca-pub-1099086350795267",
     ...(process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
       ? { "fb:app_id": process.env.NEXT_PUBLIC_FACEBOOK_APP_ID }
       : {}),
