@@ -152,21 +152,33 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','${GTM_ID}');`}
         </Script>
-        <Script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1099086350795267" async crossorigin="anonymous" />
+        <Script
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1099086350795267"
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+        />
         {/* AcLib script for auto-tagging */}
-        <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js" defer></script>
-        <script type="text/javascript">
-          function initAclib() {
-            if (typeof aclib !== "undefined" && aclib.runAutoTag) {
-              aclib.runAutoTag({
-                zoneId: "cnc4evazbe",
-              });
-            } else {
-              setTimeout(initAclib, 100);
-            }
-          }
-          document.addEventListener("DOMContentLoaded", initAclib);
-        </script>
+        <Script
+          id="aclib"
+          src="https://acscdn.com/script/aclib.js"
+          strategy="afterInteractive"
+        />
+        <Script
+          id="aclib-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              function initAclib() {
+                if (typeof aclib !== "undefined" && aclib.runAutoTag) {
+                  aclib.runAutoTag({ zoneId: "cnc4evazbe" });
+                } else {
+                  setTimeout(initAclib, 100);
+                }
+              }
+              document.addEventListener("DOMContentLoaded", initAclib);
+            `,
+          }}
+        />
         <ThemeProvider>
           <CurrencyProvider defaultCurrency={defaultCurrency}>
             {children}
