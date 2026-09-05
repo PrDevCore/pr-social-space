@@ -152,6 +152,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','${GTM_ID}');`}
         </Script>
+        <Script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1099086350795267" async crossorigin="anonymous" />
         {/* AcLib script for auto-tagging */}
         <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js" defer></script>
         <script type="text/javascript">
