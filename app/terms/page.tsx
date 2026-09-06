@@ -1,0 +1,9 @@
+import Link from "next/link";
+
+export const metadata = { title: "Terms of Service" };
+
+export default function TermsPage() {
+  return (
+    <main className="min-h-screen bg-background px-6 py-16 text-foreground"><article className="mx-auto flex max-w-3xl flex-col gap-8 leading-7"><header className="flex flex-col gap-3"><Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Social Hub</Link><h1 className="text-4xl font-semibold tracking-tight">Terms of Service</h1><p className="text-muted-foreground">Last updated: September 6, 2026</p></header><section><h2 className="text-xl font-semibold">Using Social Hub</h2><p>You may use Social Hub only lawfully and only with accounts and content you are authorized to manage. Keep your login details secure and review scheduled posts before publication.</p></section><section><h2 className="text-xl font-semibold">Your content and connected accounts</h2><p>You retain rights to your content. You grant Social Hub the limited permissions required to store, process, schedule, and publish it at your direction. You are responsible for platform rules, permissions, disclosures, and the accuracy of your content.</p></section><section><h2 className="text-xl font-semibold">Paid plans and availability</h2><p>Paid features are described at checkout. Fees, renewals, cancellations, and refunds are governed by the applicable order terms. We may change or suspend features to maintain security, reliability, or legal compliance.</p></section><section><h2 className="text-xl font-semibold">Prohibited use</h2><p>Do not use Social Hub for unlawful content, spam, credential abuse, impersonation, infringement, or attempts to bypass security or provider limits.</p></section><p className="text-sm text-muted-foreground">These terms are a general implementation baseline and should be reviewed by qualified counsel before publication.</p></article></main>
+  );
+}

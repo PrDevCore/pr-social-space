@@ -1,0 +1,88 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+const CONSENT_COOKIE = "social_hub_consent";
+
+type ConsentChoice = "accepted" | "rejected";
+
+function setConsent(value: ConsentChoice) {
+  document.cookie = `${CONSENT_COOKIE}=${value}; Path=/; Max-Age=31536000; SameSite=Lax`;
+}
+
+function loadScript(src: string, attributes: Record<string, string> = {}) {
+  if (document.querySelector(`script[src="${src}"]`)) return;
+  const script = document.createElement("script");
+  script.src = src;
+  script.async = true;
+  Object.entries(attributes).forEach(([key, value]) => script.setAttribute(key, value));
+  document.head.appendChild(script);
+}
+
+function enableAdvertising() {
+  loadScript(
+    "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1099086350795267",
+    { crossorigin: "anonymous" },
+  );
+  loadScript("https://acscdn.com/script/aclib.js");
+  window.setTimeout(() => {
+    if (typeof window.aclib?.runAutoTag === "function") {
+      window.aclib.runAutoTag({ zoneId: "6aogt6pums" });
+    }
+  }, 250);
+}
+
+function enableAnalytics() {
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID ?? "GTM-NC7RSW92";
+  if (document.querySelector(`script[src*="googletagmanager.com/gtm.js?id=${gtmId}"]`)) return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
+  loadScript(`https://www.googletagmanager.com/gtm.js?id=${gtmId}`);
+}
+
+export default function PrivacyConsent() {
+  const [choice, setChoice] = useState<ConsentChoice | null>(null);
+
+  useEffect(() => {
+    const saved = document.cookie.match(new RegExp(`(?:^|; )${CONSENT_COOKIE}=([^;]*)`))?.[1] as ConsentChoice | undefined;
+    if (saved === "accepted" || saved === "rejected") {
+      setChoice(saved);
+      if (saved === "accepted") {
+        enableAdvertising();
+        enableAnalytics();
+      }
+    }
+  }, []);
+
+  const choose = (next: ConsentChoice) => {
+    setConsent(next);
+    setChoice(next);
+    if (next === "accepted") {
+      enableAdvertising();
+      enableAnalytics();
+    }
+  };
+
+  if (choice) return null;
+
+  return (
+    <aside className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-3xl rounded-2xl border border-border bg-popover p-4 text-popover-foreground shadow-2xl sm:inset-x-4" role="dialog" aria-label="Privacy and advertising preferences">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+          Social Hub uses essential cookies to operate the service and optional advertising and analytics cookies to improve the experience and support the platform. Read our <a className="font-medium text-foreground underline underline-offset-4" href="/privacy">Privacy Policy</a> and <a className="font-medium text-foreground underline underline-offset-4" href="/cookies">Cookie & Advertising Policy</a>.
+        </p>
+        <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
+          <button type="button" onClick={() => choose("rejected")} className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">Reject optional</button>
+          <button type="button" onClick={() => choose("accepted")} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">Accept optional</button>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+declare global {
+  interface Window {
+    aclib?: { runAutoTag?: (options: { zoneId: string }) => void };
+    dataLayer?: Array<Record<string, unknown>>;
+  }
+}
