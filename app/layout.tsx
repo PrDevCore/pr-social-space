@@ -8,17 +8,6 @@ import { detectCurrency } from "@/lib/flutterwave";
 import { SITE_URL, absoluteUrl } from "@/lib/site";
 import "./globals.css";
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      "amp-auto-ads": {
-        type?: string;
-        "data-ad-client"?: string;
-      };
-    }
-  }
-}
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -147,17 +136,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased">
-        <Script
-          id="amp-auto-ads"
-          async
-          custom-element="amp-auto-ads"
-          src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"
-          strategy="beforeInteractive"
-        />
-        <amp-auto-ads
-          type="adsense"
-          data-ad-client="ca-pub-1099086350795267"
-        />
         {/* Google Tag Manager (noscript) — immediately after opening <body> */}
         <noscript>
           <iframe
@@ -191,14 +169,13 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              function initAclib() {
-                if (typeof aclib !== "undefined" && aclib.runAutoTag) {
+              (function initAclib() {
+                if (typeof aclib !== "undefined" && typeof aclib.runAutoTag === "function") {
                   aclib.runAutoTag({ zoneId: "gsxu6yer4" });
-                } else {
-                  setTimeout(initAclib, 100);
+                  return;
                 }
-              }
-              document.addEventListener("DOMContentLoaded", initAclib);
+                setTimeout(initAclib, 100);
+              })();
             `,
           }}
         />
