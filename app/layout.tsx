@@ -108,6 +108,7 @@ export const metadata: Metadata = {
       : {}),
   },
   other: {
+    "google-adsense-account": "ca-pub-1099086350795267",
     ...(process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
       ? { "fb:app_id": process.env.NEXT_PUBLIC_FACEBOOK_APP_ID }
       : {}),
@@ -152,30 +153,29 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','${GTM_ID}');`}
         </Script>
-        <Script
+        <script
+          async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1099086350795267"
-          strategy="afterInteractive"
           crossOrigin="anonymous"
         />
-        {/* AcLib script for auto-tagging */}
+        {/* Adcash library: loaded once in the document head, without rendering an ad by itself. */}
         <Script
           id="aclib"
           src="https://acscdn.com/script/aclib.js"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
         />
         <Script
           id="aclib-init"
           strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-              function initAclib() {
-                if (typeof aclib !== "undefined" && aclib.runAutoTag) {
-                  aclib.runAutoTag({ zoneId: "cnc4evazbe" });
-                } else {
-                  setTimeout(initAclib, 100);
+              (function initAclib() {
+                if (typeof aclib !== "undefined" && typeof aclib.runAutoTag === "function") {
+                  aclib.runAutoTag({ zoneId: "6aogt6pums" });
+                  return;
                 }
-              }
-              document.addEventListener("DOMContentLoaded", initAclib);
+                setTimeout(initAclib, 100);
+              })();
             `,
           }}
         />
