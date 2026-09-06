@@ -180,11 +180,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           strategy="afterInteractive"
           crossOrigin="anonymous"
         />
-        {/* AcLib script for auto-tagging */}
+        {/* Adcash library: loaded once in the document head, without rendering an ad by itself. */}
         <Script
           id="aclib"
           src="https://acscdn.com/script/aclib.js"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
         />
         <Script
           id="aclib-init"
