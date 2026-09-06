@@ -1,0 +1,7 @@
+import Link from "next/link";
+
+export const metadata = { title: "Data Rights" };
+
+export default function DataRightsPage() {
+  return <main className="min-h-screen bg-background px-6 py-16 text-foreground"><article className="mx-auto flex max-w-3xl flex-col gap-8 leading-7"><header className="flex flex-col gap-3"><Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Social Hub</Link><h1 className="text-4xl font-semibold tracking-tight">Data rights</h1><p className="text-muted-foreground">How to contact Social Hub about your information</p></header><section><h2 className="text-xl font-semibold">Requests</h2><p>To request access, correction, export, deletion, restriction, or objection to optional advertising processing, contact Social Hub through the support channel shown in your account or the contact address published by the site operator. Include the account email, request type, and enough information to verify ownership.</p></section><section><h2 className="text-xl font-semibold">Response process</h2><p>We may need to verify your identity and may retain limited information where required for security, fraud prevention, accounting, or legal compliance. We will respond within the period required by applicable law.</p></section><p className="text-sm text-muted-foreground">If you need a jurisdiction-specific request route or legal entity contact, the site operator should add those details before launch.</p></article></main>;
+}
