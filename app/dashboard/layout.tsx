@@ -17,7 +17,7 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="min-h-screen">
-      <header className="brand-header border-b border-black/10 bg-[#d4a373] text-[#3b2314]">
+      <header className="brand-header sticky top-0 z-30 border-b border-black/10 bg-[#d4a373]/95 text-[#3b2314] shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6 sm:py-4">
           <Link
             href="/dashboard"

@@ -1,5 +1,3 @@
-import "server-only";
-
 export type NewsTopic = "Technology" | "Entertainment";
 
 export interface NewsStory {

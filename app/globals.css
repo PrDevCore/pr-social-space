@@ -6,6 +6,16 @@ body {
   background: linear-gradient(180deg, #fbfbfe 0%, #eef0fb 100%);
   color: #111318;
   background-attachment: fixed;
+  font-feature-settings: "cv11" 1, "ss01" 1;
+}
+
+::selection {
+  background: rgba(79, 70, 229, 0.18);
+}
+
+:focus-visible {
+  outline: 3px solid rgba(79, 70, 229, 0.42);
+  outline-offset: 3px;
 }
 
 /* Smooth color transitions when switching themes (disabled by next-themes'
