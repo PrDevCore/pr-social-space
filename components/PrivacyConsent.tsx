@@ -81,14 +81,14 @@ export default function PrivacyConsent() {
   if (choice) return null;
 
   return (
-    <aside className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-3xl rounded-2xl border border-border bg-popover p-4 text-popover-foreground shadow-2xl sm:inset-x-4" role="dialog" aria-label="Privacy and advertising preferences">
+    <aside className="fixed inset-x-3 bottom-3 z-[60] mx-auto w-auto max-w-3xl rounded-2xl border border-black/15 bg-white p-4 text-black shadow-2xl shadow-black/20 dark:border-white/20 dark:bg-[#12243d] dark:text-white sm:inset-x-4 sm:p-5" role="dialog" aria-label="Privacy and advertising preferences">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-          Social Hub uses essential cookies to operate the service and optional advertising and analytics cookies to improve the experience and support the platform. Read our <a className="font-medium text-foreground underline underline-offset-4" href="/privacy">Privacy Policy</a> and <a className="font-medium text-foreground underline underline-offset-4" href="/cookies">Cookie & Advertising Policy</a>.
+        <p className="min-w-0 max-w-2xl text-sm leading-6 text-black/70 dark:text-white/70">
+          Social Hub uses essential cookies to operate the service and optional advertising and analytics cookies to improve the experience and support the platform. Read our <a className="font-medium text-black underline underline-offset-4 dark:text-white" href="/privacy">Privacy Policy</a> and <a className="font-medium text-black underline underline-offset-4 dark:text-white" href="/cookies">Cookie & Advertising Policy</a>.
         </p>
-        <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex">
-          <button type="button" onClick={() => choose("rejected")} className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted">Reject optional</button>
-          <button type="button" onClick={() => choose("accepted")} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">Accept optional</button>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+          <button type="button" onClick={() => choose("rejected")} className="rounded-lg border border-black/15 px-3 py-2 text-sm font-medium text-black transition hover:bg-black/5 dark:border-white/20 dark:text-white dark:hover:bg-white/10">Reject optional</button>
+          <button type="button" onClick={() => choose("accepted")} className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">Accept optional</button>
         </div>
       </div>
     </aside>

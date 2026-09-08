@@ -37,7 +37,14 @@ export default async function DashboardPage({
   const connectionFailed = searchParams.isSuccess === "false";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-black/10 bg-white/60 px-4 py-3 shadow-sm backdrop-blur dark:bg-white/[0.04] sm:px-5">
+        <div className="flex items-center gap-3">
+          <span className="flex size-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" aria-hidden="true" />
+          <p className="text-sm font-medium text-black/70 dark:text-white/70">Workspace health is being monitored live</p>
+        </div>
+        <p className="text-xs font-medium text-black/40 dark:text-white/40">Your command center</p>
+      </div>
       {!user.onboarding.completed && <OnboardingWizard user={user} />}
       <DashboardHeader name={user.name} status={loadError ? "error" : "optimal"} />
 
