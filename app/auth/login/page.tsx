@@ -30,7 +30,7 @@ export default async function LoginPage({
   const error = searchParams.error ? errorMessage[searchParams.error] : undefined;
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center bg-paper px-4 py-10">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-paper px-4 py-10">
       <div className="absolute right-6 top-6">
         <ThemeToggle />
       </div>

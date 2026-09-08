@@ -16,9 +16,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen">
-      <header className="brand-header border-b border-black/10 bg-[#d4a373] text-[#3b2314]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6 sm:py-4">
+    <div className="min-h-screen bg-transparent">
+      <header className="brand-header sticky top-0 z-30 border-b border-black/10 bg-[#d4a373]/95 text-[#3b2314] shadow-[0_8px_30px_-18px_rgba(17,19,24,0.7)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <Link
             href="/dashboard"
             className="flex items-center gap-2 font-extrabold tracking-tight"
@@ -57,7 +57,7 @@ export default function DashboardLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:py-12">{children}</main>
     </div>
   );
 }

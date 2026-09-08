@@ -140,8 +140,8 @@ export default function SidebarNav({
 }) {
   const style =
     variant === "sidebar"
-      ? "hidden self-start rounded-2xl border border-black/10 bg-white p-2 lg:sticky lg:top-6 lg:flex lg:flex-col lg:gap-1"
-      : "mb-4 flex gap-1 overflow-x-auto rounded-xl border border-black/10 bg-white p-1 lg:hidden";
+      ? "hidden self-start rounded-2xl border border-black/10 bg-white/80 p-2 shadow-sm backdrop-blur lg:sticky lg:top-24 lg:flex lg:flex-col lg:gap-1"
+      : "mb-4 flex gap-1 overflow-x-auto rounded-xl border border-black/10 bg-white/80 p-1 shadow-sm backdrop-blur lg:hidden";
   return (
     <nav role="tablist" aria-label="Dashboard sections" className={style}>
       {TABS.map((t) => (

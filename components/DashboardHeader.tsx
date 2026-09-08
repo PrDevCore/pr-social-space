@@ -16,10 +16,10 @@ export default function DashboardHeader({
   const optimized = status === "optimal";
 
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <p className="text-lg font-extrabold tracking-tight text-black">Social Hub</p>
-        <h1 className="text-2xl font-semibold tracking-tight">
+    <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="max-w-2xl">
+        <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-accent">Social Hub workspace</p>
+        <h1 className="text-balance text-2xl font-semibold tracking-tight sm:text-3xl">
           Welcome back, {firstName}, your accounts are{" "}
           {optimized ? (
             <span className="bg-gradient-to-r from-accent to-violet-500 bg-clip-text text-transparent">
