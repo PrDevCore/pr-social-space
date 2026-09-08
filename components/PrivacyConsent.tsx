@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 
 const CONSENT_COOKIE = "social_hub_consent";
+const AD_FREQUENCY_COOKIE = "social_hub_ad_last_loaded";
+const AD_FREQUENCY_WINDOW_SECONDS = 30 * 60;
 
 type ConsentChoice = "accepted" | "rejected";
 
@@ -19,7 +21,20 @@ function loadScript(src: string, attributes: Record<string, string> = {}) {
   document.head.appendChild(script);
 }
 
+function canLoadAdvertising() {
+  const lastLoaded = Number(
+    document.cookie.match(new RegExp(`(?:^|; )${AD_FREQUENCY_COOKIE}=([^;]*)`))?.[1] ?? 0,
+  );
+  return !lastLoaded || Date.now() - lastLoaded >= AD_FREQUENCY_WINDOW_SECONDS * 1000;
+}
+
+function markAdvertisingLoaded() {
+  document.cookie = `${AD_FREQUENCY_COOKIE}=${Date.now()}; Path=/; Max-Age=${AD_FREQUENCY_WINDOW_SECONDS}; SameSite=Lax`;
+}
+
 function enableAdvertising() {
+  if (!canLoadAdvertising()) return;
+  markAdvertisingLoaded();
   loadScript(
     "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1099086350795267",
     { crossorigin: "anonymous" },
