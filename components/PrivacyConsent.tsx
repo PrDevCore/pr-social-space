@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const CONSENT_COOKIE = "social_hub_consent";
@@ -33,6 +34,7 @@ function markAdvertisingLoaded() {
 }
 
 function enableAdvertising() {
+  if (!window.location.pathname.startsWith("/blog")) return;
   if (!canLoadAdvertising()) return;
   markAdvertisingLoaded();
   loadScript(
@@ -56,6 +58,7 @@ function enableAnalytics() {
 }
 
 export default function PrivacyConsent() {
+  const pathname = usePathname();
   const [choice, setChoice] = useState<ConsentChoice | null>(null);
 
   useEffect(() => {
@@ -67,7 +70,7 @@ export default function PrivacyConsent() {
         enableAnalytics();
       }
     }
-  }, []);
+  }, [pathname]);
 
   const choose = (next: ConsentChoice) => {
     setConsent(next);
