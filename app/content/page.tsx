@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureProfileForUser, listAccounts, SocialAccount } from "@/lib/zernio";
 import ContentGallery from "@/components/ContentGallery";
+import BackNav from "@/components/BackNav";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default async function ContentPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <BackNav />
       {loadError && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           {loadError}
