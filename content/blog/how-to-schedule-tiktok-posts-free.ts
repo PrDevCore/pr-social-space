@@ -26,7 +26,7 @@ export const scheduleTikTokPosts: BlogPost = {
     { type: "h2", text: "Option 2: A free multi-platform scheduler" },
     {
       type: "p",
-      text: "Social Hub's free plan lets you connect two accounts (TikTok plus Instagram, for example) and publish up to 100 posts a month. You get:",
+      text: "Social Hub's free plan lets you connect two accounts (TikTok plus Instagram, for example) and publish up to 10 posts a month. You get:",
     },
     {
       type: "ul",

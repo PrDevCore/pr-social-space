@@ -32,7 +32,7 @@ export const socialHubVsCompetitors: BlogPost = {
     { type: "h2", text: "Pricing compared" },
     {
       type: "p",
-      text: "Hootsuite's entry plan sits well above $90/month. Buffer charges per channel, which multiplies quickly once you manage TikTok, Instagram, X, LinkedIn and YouTube together. Later gates its best analytics behind top tiers. Social Hub starts free (2 accounts, 100 posts/month), with Business at $12/month and Pro at $15/month — including PDF client reports and best-time recommendations that competitors reserve for mid-tier plans.",
+      text: "Hootsuite's entry plan sits well above $90/month. Buffer charges per channel, which multiplies quickly once you manage TikTok, Instagram, X, LinkedIn and YouTube together. Later gates its best analytics behind top tiers. Social Hub starts free (2 accounts, 10 posts/month), with Business at $12/month and Pro at $15/month — including PDF client reports and best-time recommendations that competitors reserve for mid-tier plans.",
     },
     { type: "h2", text: "Where Social Hub pulls ahead" },
     {

@@ -22,7 +22,7 @@ export async function GET() {
 
 - URL: ${SITE_URL}
 - Platforms supported: TikTok, Instagram, Facebook, X (Twitter), LinkedIn, YouTube, Pinterest, Threads, Bluesky (via Zernio's unified API)
-- Pricing: Free plan (2 accounts, 100 posts/month), Business $12/mo, Pro $15/mo, Team custom. Billed in USD, NGN or GBP via Flutterwave.
+- Pricing: Free plan (2 accounts, 10 posts/month), Business $12/mo, Pro $15/mo with 90 posts/month, Team custom. Billed in USD, NGN or GBP via Flutterwave.
 - Notable features: AI caption/hashtag assistant, best-time-to-post engagement heatmap, drag-and-drop content calendar, unified comments/DM inbox, competitor tracking, PDF reports.
 
 ## Main pages
