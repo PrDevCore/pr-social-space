@@ -69,7 +69,6 @@ export const PLANS: Plan[] = [
     features: [
       "6 connected accounts",
       "Unlimited posts",
-      "90-post bonus gift included",
       "Everything in Free",
       "Best-time-to-post recommendations",
       "Downloadable PDF reports (white-label)",
@@ -90,7 +89,6 @@ export const PLANS: Plan[] = [
     features: [
       "10 connected accounts",
       "90 posts per month",
-      "90-post bonus gift included",
       "Everything in Free",
       "Best-time-to-post recommendations",
       "Downloadable PDF reports (white-label)",
