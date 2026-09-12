@@ -86,11 +86,6 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Social Hub",
-  },
   formatDetection: {
     telephone: false,
     email: false,
@@ -109,6 +104,7 @@ export const metadata: Metadata = {
       : {}),
   },
   other: {
+    "mobile-web-app-capable": "yes",
     "google-adsense-account": "ca-pub-1099086350795267",
     ...(process.env.NEXT_PUBLIC_FACEBOOK_APP_ID
       ? { "fb:app_id": process.env.NEXT_PUBLIC_FACEBOOK_APP_ID }
