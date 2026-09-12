@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import BackNav from "@/components/BackNav";
 
 export const metadata: Metadata = {
   title: "About PR Social Hub",
@@ -19,7 +20,10 @@ export default function AboutPage() {
       <section className="border-b border-border/70 bg-card/30 px-6 py-20 sm:px-10 lg:px-16 lg:py-28">
         <div className="mx-auto flex max-w-6xl flex-col gap-12">
           <div className="flex items-center justify-between gap-6">
-            <Link href="/" className="text-sm font-semibold tracking-tight text-foreground hover:text-primary">PR Social Hub</Link>
+            <div className="flex items-center gap-5">
+              <BackNav fallback="/" label="Back" />
+              <Link href="/" className="text-sm font-semibold tracking-tight text-foreground hover:text-primary">PR Social Hub</Link>
+            </div>
             <Link href="/software" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">Our software <span aria-hidden="true">→</span></Link>
           </div>
           <div className="max-w-4xl">

@@ -259,7 +259,7 @@ export default async function Home() {
             </a>
           </div>
           <p className="mt-3 text-xs text-black/40">
-            Free plan: 2 connected accounts · 100 posts/month
+            Free plan: 2 connected accounts · 10 posts/month
           </p>
         </div>
         <AnimatedMockup />

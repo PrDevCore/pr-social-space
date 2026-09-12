@@ -7,6 +7,7 @@ import {
   postJsonLd,
   breadcrumbJsonLd,
 } from "@/lib/blog";
+import BackNav from "@/components/BackNav";
 
 interface Params {
   slug: string;
@@ -77,8 +78,9 @@ export default async function BlogPostPage({
       />
 
       <main className="mx-auto max-w-3xl px-6 py-12">
-        <Link href="/blog" className="text-sm font-medium text-accent hover:underline">
-          ← All guides
+        <BackNav fallback="/blog" label="Back to blog" />
+        <Link href="/blog" className="mt-4 inline-flex text-sm font-medium text-accent hover:underline">
+          Browse all guides
         </Link>
 
         <header className="mt-6">
