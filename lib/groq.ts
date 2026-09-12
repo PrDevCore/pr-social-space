@@ -13,7 +13,7 @@ import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Groq free-tier models — fast & generous limits
-const MODEL = process.env.GROQ_MODEL ?? "llama-3.1-8b-instant";
+const MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-20b";
 
 // ---------------------------------------------------------------------------
 
