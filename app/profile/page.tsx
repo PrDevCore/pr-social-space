@@ -65,7 +65,6 @@ export default async function ProfilePage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-accent">Profile health</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">Keep your account details current to make publishing and billing smoother.</p>
           </div>
-          <p className="text-xs text-muted-foreground">Secure sessions and Argon2id password hashing protect your account.</p>
         </aside>
 
         <div className="space-y-6">
@@ -125,16 +124,6 @@ export default async function ProfilePage() {
                 <dd>{joined}</dd>
               </div>
             </dl>
-            <div className="mt-4 flex items-center gap-2 rounded-xl bg-black/[0.03] px-4 py-3 text-xs text-black/50">
-              <Image
-                src="/logo.png"
-                alt="Social Hub"
-                width={20}
-                height={20}
-                className="rounded"
-              />
-              Secured with Argon2id password hashing and encrypted sessions.
-            </div>
           </div>
         </div>
       </div>
