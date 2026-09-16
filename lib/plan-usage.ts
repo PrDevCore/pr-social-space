@@ -68,7 +68,7 @@ export async function checkPostLimit(
     return {
       ok: false,
       plan,
-      error: `You've used all ${plan.maxPostsPerMonth} posts on the ${plan.name} plan this month. Upgrade for unlimited posting.`,
+      error: `You've used all ${plan.maxPostsPerMonth} posts included with the ${plan.name} plan this month. Review your plan options for a higher allowance.`,
     };
   }
   return { ok: true, plan };
