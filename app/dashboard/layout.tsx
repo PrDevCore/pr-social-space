@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import LogoutButton from "@/components/LogoutButton";
 import ThemeToggle from "@/components/ThemeToggle";
 import RegionToggle from "@/components/RegionToggle";
+import DashboardMenuBar from "@/components/dashboard-menu-bar";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -32,7 +33,8 @@ export default function DashboardLayout({
             />
             <span className="hidden sm:block">Social Hub</span>
           </Link>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+            <DashboardMenuBar />
             <ThemeToggle />
             <RegionToggle />
             <Link

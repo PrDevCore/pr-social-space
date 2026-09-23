@@ -59,11 +59,15 @@ function PostCard({
   post,
   account,
   onBoost,
+  onEdit,
 }: {
   post: FeedPost;
   account: SocialAccount;
   onBoost: (postId: string) => void;
+  onEdit: (postId: string, content: string) => Promise<void>;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(post.content ?? "");
   const image = post.media.find((m) => m.type === "image");
   const isVideo = post.media.some((m) => m.type === "video" || m.type === "gif");
   const boostable = ["facebook", "instagram"].includes(account.platform);
@@ -81,9 +85,17 @@ function PostCard({
         </div>
       )}
       <div className="space-y-2 p-3">
-        <p className="line-clamp-3 text-sm text-black/80">
-          {post.content || "(no caption)"}
-        </p>
+        {editing ? (
+          <div className="space-y-2">
+            <textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={3} aria-label="Edit published post caption" className="w-full resize-none rounded-lg border border-black/15 bg-white p-2 text-sm text-black outline-none focus:border-accent" />
+            <div className="flex gap-2">
+              <button type="button" onClick={async () => { await onEdit(post.id, draft); setEditing(false); }} className="rounded-lg bg-accent px-3 py-1.5 text-xs font-semibold text-white">Save</button>
+              <button type="button" onClick={() => { setDraft(post.content ?? ""); setEditing(false); }} className="rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium text-black/70">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <p className="line-clamp-3 text-sm text-black/80">{post.content || "(no caption)"}</p>
+        )}
         <div className="flex items-center justify-between gap-2">
           <div className="flex flex-wrap gap-1">
             {post.platforms.map((p, i) =>
@@ -106,6 +118,9 @@ function PostCard({
             {formatDate(post.publishedAt ?? post.createdAt)}
           </span>
         </div>
+        {!editing && (
+          <button type="button" onClick={() => setEditing(true)} className="mt-1 mr-2 rounded-lg border border-black/10 px-3 py-1.5 text-xs font-medium text-black/70 transition hover:bg-black/5">Edit post</button>
+        )}
         {boostable && (
           <button
             onClick={() => onBoost(post.id)}
@@ -150,6 +165,12 @@ export default function FeedSection({
       setLoading(false);
     }
   }, []);
+
+  const editPost = useCallback(async (postId: string, content: string) => {
+    const res = await fetch("/api/social/feed", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId, content }) });
+    if (!res.ok) { const body = await res.json().catch(() => ({})); throw new Error(body.error ?? "Failed to edit post."); }
+    await load();
+  }, [load]);
 
   useEffect(() => {
     load();
@@ -296,6 +317,7 @@ export default function FeedSection({
                         post={post}
                         account={account}
                         onBoost={setBoostPostId}
+                        onEdit={editPost}
                       />
                     ))}
                   </div>

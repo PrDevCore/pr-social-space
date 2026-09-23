@@ -61,6 +61,8 @@ export default function CalendarPanel() {
   const [overKey, setOverKey] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [moveId, setMoveId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -147,6 +149,31 @@ export default function CalendarPanel() {
       setDragId(null);
       setOverKey(null);
       setMoveId(null);
+    }
+  }
+
+  async function editPost(postId: string) {
+    if (!editContent.trim()) return;
+    setBusyKey(postId);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/social/calendar", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, content: editContent }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error ?? "Failed to edit post");
+      }
+      setEditId(null);
+      setEditContent("");
+      setNotice("Scheduled post updated.");
+      await load();
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "Failed to edit post.");
+    } finally {
+      setBusyKey(null);
     }
   }
 
@@ -347,7 +374,36 @@ export default function CalendarPanel() {
                             <span className="font-medium text-black/60">{timeLabel(p.scheduledFor)}</span>
                             {busyKey === p.id && <span className="text-black/40">…</span>}
                           </div>
-                          <p className="line-clamp-2 text-black/70">{p.content}</p>
+                          {editId === p.id ? (
+                            <div className="mt-1 space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                              <textarea
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                rows={3}
+                                aria-label="Edit scheduled post caption"
+                                className="w-full resize-none rounded border border-black/15 bg-white p-1.5 text-[11px] text-black outline-none focus:border-accent"
+                              />
+                              <div className="flex gap-1">
+                                <button type="button" onClick={() => editPost(p.id)} className="rounded bg-accent px-2 py-1 text-[10px] font-semibold text-white">Save</button>
+                                <button type="button" onClick={() => setEditId(null)} className="rounded border border-black/10 px-2 py-1 text-[10px]">Cancel</button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="line-clamp-2 text-black/70">{p.content}</p>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditId(p.id);
+                              setEditContent(p.content ?? "");
+                              setMoveId(null);
+                            }}
+                            className="mt-0.5 mr-1 inline-block rounded px-1 py-0.5 font-medium text-accent hover:bg-accent/10"
+                            title="Edit this scheduled post"
+                          >
+                            edit
+                          </button>
                           <button
                             type="button"
                             onClick={(e) => {
