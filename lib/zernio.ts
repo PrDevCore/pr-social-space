@@ -709,7 +709,7 @@ export async function getNextQueueSlot(profileId: string): Promise<{
 /** PUT /v1/posts/{postId} — update a scheduled post (reschedule). */
 export async function updatePost(
   postId: string,
-  patch: { scheduledFor?: string; timezone?: string }
+  patch: { content?: string; scheduledFor?: string; timezone?: string }
 ) {
   return zernioFetch<{ post?: Record<string, unknown>; message?: string }>(
     `/posts/${postId}`,

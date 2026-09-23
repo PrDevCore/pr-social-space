@@ -12,7 +12,7 @@ import {
  * Visual content calendar.
  *
  * GET   /api/social/calendar            -> { posts, queueSlots, nextSlot }
- * PATCH /api/social/calendar            -> { postId, scheduledFor } (reschedule)
+ * PATCH   /api/social/calendar            -> { postId, scheduledFor?, content? } (edit/reschedule)
  */
 
 export async function GET() {
@@ -40,16 +40,16 @@ export async function PATCH(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  let body: { postId?: string; scheduledFor?: string };
+  let body: { postId?: string; scheduledFor?: string; content?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  if (!body.postId || !body.scheduledFor) {
+  if (!body.postId || (!body.scheduledFor && !body.content?.trim())) {
     return NextResponse.json(
-      { error: "postId and scheduledFor are required" },
+      { error: "postId and either scheduledFor or content are required" },
       { status: 400 }
     );
   }
@@ -61,9 +61,15 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    const scheduledFor = new Date(body.scheduledFor).toISOString();
-    await updatePost(body.postId, { scheduledFor, timezone: "UTC" });
-    return NextResponse.json({ ok: true, scheduledFor });
+    const scheduledFor = body.scheduledFor
+      ? new Date(body.scheduledFor).toISOString()
+      : undefined;
+    await updatePost(body.postId, {
+      content: body.content?.trim(),
+      scheduledFor,
+      timezone: scheduledFor ? "UTC" : undefined,
+    });
+    return NextResponse.json({ ok: true, scheduledFor, content: body.content?.trim() });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Failed to reschedule post" }, { status: 502 });
