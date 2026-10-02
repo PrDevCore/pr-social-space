@@ -10,7 +10,15 @@ import Groq from "groq-sdk";
  * than analyzing image/video pixels directly.
  */
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+function getGroqClient(): Groq {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "GROQ_API_KEY is not set. Add it to your environment to use AI features."
+    );
+  }
+  return new Groq({ apiKey });
+}
 
 // Groq free-tier models — fast & generous limits
 const MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-20b";
@@ -57,7 +65,7 @@ export async function generateCaption(input: CaptionInput): Promise<string> {
     context: input.context,
   });
 
-  const res = await groq.chat.completions.create({
+  const res = await getGroqClient().chat.completions.create({
     model: MODEL,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.9,
@@ -81,7 +89,7 @@ async function runTextGeneration(
     );
   }
 
-  const res = await groq.chat.completions.create({
+  const res = await getGroqClient().chat.completions.create({
     model: MODEL,
     messages: [{ role: "user", content: prompt }],
     temperature: opts.temperature ?? 0.9,
