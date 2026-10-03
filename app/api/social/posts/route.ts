@@ -10,7 +10,7 @@ import {
 import { listPostsForUser, recordPost } from "@/lib/store";
 import { checkPostLimit } from "@/lib/plan-usage";
 import { autoCropForInstagram, needsInstagramCrop, type ContentType } from "@/lib/image-utils";
-import { createPostWithPostiz, isPostizPilotEnabled } from "@/lib/postiz";
+import { createPostWithPostiz, isPostizEnabled } from "@/lib/postiz";
 
 // GET /api/social/posts — this user's post history from our own backend.
 // Statuses are overlaid with live Zernio state so activity always reflects
@@ -145,17 +145,9 @@ export async function POST(req: NextRequest) {
       contentType,
     };
 
-    let result;
-    if (isPostizPilotEnabled) {
-      try {
-        result = await createPostWithPostiz(postParams);
-      } catch (postizError) {
-        console.warn("Postiz pilot failed; falling back to Zernio:", postizError);
-        result = await createPost(postParams);
-      }
-    } else {
-      result = await createPost(postParams);
-    }
+    const result = isPostizEnabled
+      ? await createPostWithPostiz(postParams)
+      : await createPost(postParams);
 
     await recordPost({
       id: result.id,
