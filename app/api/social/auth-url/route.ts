@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { createAuthUrl, ensureProfileForUser, SocialPlatform } from "@/lib/zernio";
+import { createMetaAuthUrl } from "@/lib/meta";
 import { checkAccountLimit } from "@/lib/plan-usage";
 
 // [ Call Zernio Auth URL Endpoint ]
@@ -32,15 +33,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const profileId = await ensureProfileForUser(user.id);
     const appUrl = process.env.APP_URL ?? req.nextUrl.origin;
+    const redirectUri = `${appUrl}/api/social/callback`;
+    if (platform === "facebook" || platform === "instagram") {
+      const state = Buffer.from(JSON.stringify({ userId: user.id, nonce: crypto.randomUUID() })).toString("base64url");
+      const response = NextResponse.json({ url: createMetaAuthUrl(state, redirectUri) });
+      response.cookies.set("meta_oauth_state", state, { httpOnly: true, secure: true, sameSite: "lax", path: "/api/social/callback", maxAge: 600 });
+      return response;
+    }
 
-    const { authUrl } = await createAuthUrl({
-      platform,
-      profileId,
-      redirectUrl: `${appUrl}/api/social/callback`,
-    });
-
+    const profileId = await ensureProfileForUser(user.id);
+    const { authUrl } = await createAuthUrl({ platform, profileId, redirectUrl: redirectUri });
     return NextResponse.json({ url: authUrl });
   } catch (err) {
     console.error(err);

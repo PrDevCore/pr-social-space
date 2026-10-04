@@ -2,14 +2,16 @@ import "server-only";
 
 import type { CreatePostParams } from "@/lib/zernio";
 
-const API_BASE = (process.env.POSTIZ_API_BASE ?? "https://api.postiz.com").replace(/\/$/, "");
+// POSTIZ_API_BASE should point to the self-hosted instance's public API, for
+// example https://social.example.com/api/public/v1.
+const API_BASE = (process.env.POSTIZ_API_BASE ?? "http://localhost:5000/api/public/v1").replace(/\/$/, "");
 const API_KEY = process.env.POSTIZ_API_KEY;
 const CLIENT_ID = process.env.POSTIZ_CLIENT_ID;
 const CLIENT_SECRET = process.env.POSTIZ_CLIENT_SECRET;
 const POSTIZ_FRONTEND_URL = (process.env.POSTIZ_FRONTEND_URL ?? "https://platform.postiz.com").replace(/\/$/, "");
 
-/** Explicit opt-in keeps the existing Zernio engine as the safe default. */
-export const isPostizPilotEnabled = process.env.POSTIZ_ENABLED === "true";
+/** Self-hosted Postiz is the primary publishing and scheduling engine. */
+export const isPostizEnabled = process.env.POSTIZ_ENABLED !== "false";
 
 function assertConfigured() {
   if (!API_KEY) throw new Error("POSTIZ_API_KEY is not configured.");
@@ -20,7 +22,7 @@ async function postizFetch<T>(path: string, init: RequestInit = {}): Promise<T> 
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: API_KEY!,
       "Content-Type": "application/json",
       ...init.headers,
     },
@@ -41,24 +43,30 @@ async function postizFetch<T>(path: string, init: RequestInit = {}): Promise<T> 
  * only after the Postiz Cloud contract has been verified against the account.
  */
 export async function createPostWithPostiz(params: CreatePostParams) {
-  return postizFetch<{ id: string; status: string }>("/posts", {
+  const scheduled = Boolean(params.scheduledAt);
+  const content = [params.content, ...(params.hashtags ?? []).map((tag) => `#${tag.replace(/^#/, "")}`)].join(" ");
+
+  return postizFetch<{ id: string; status?: string }>("/posts", {
     method: "POST",
     headers: { "Idempotency-Key": `social-hub-${crypto.randomUUID()}` },
     body: JSON.stringify({
-      content: params.content,
-      profileId: params.profileId,
-      targets: params.targets,
-      mediaUrls: params.mediaUrls,
-      scheduledAt: params.scheduledAt,
-      hashtags: params.hashtags,
-      contentType: params.contentType,
+      type: scheduled ? "schedule" : "now",
+      date: params.scheduledAt ?? new Date().toISOString(),
+      shortLink: false,
+      tags: [],
+      posts: params.targets.map((target) => ({
+        integration: { id: target.accountId },
+        value: [{ content }],
+        settings: { type: target.platform },
+      })),
+      media: (params.mediaUrls ?? []).map((url) => ({ path: url, id: url })),
     }),
-  });
+  }).then((result) => ({ id: result.id, status: result.status ?? (scheduled ? "scheduled" : "published") }));
 }
 
 export function postizPilotStatus() {
   return {
-    enabled: isPostizPilotEnabled,
+    enabled: isPostizEnabled,
     configured: Boolean(API_KEY || (CLIENT_ID && CLIENT_SECRET)),
     baseUrl: API_BASE,
   };
