@@ -1,46 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import {
-  createPost,
-  ensureProfileForUser,
-  listAccounts,
-  listPosts,
-  presignMedia,
-} from "@/lib/zernio";
+import { ensureProfileForUser, listAccounts, presignMedia } from "@/lib/zernio";
 import { listPostsForUser, recordPost } from "@/lib/store";
 import { checkPostLimit } from "@/lib/plan-usage";
 import { autoCropForInstagram, needsInstagramCrop, type ContentType } from "@/lib/image-utils";
-import { createPostWithPostiz, isPostizEnabled } from "@/lib/postiz";
+import { createPostWithPostiz } from "@/lib/postiz";
 import { listMetaAccounts, publishMetaPost } from "@/lib/meta";
 
 // GET /api/social/posts — this user's post history from our own backend.
-// Statuses are overlaid with live Zernio state so activity always reflects
-// what actually happened (a post.* webhook may not have fired yet).
+// Postiz webhooks can update these records without requiring a paid provider read.
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const records = await listPostsForUser(user.id);
-
-  let liveById = new Map<string, { status: string; publishedAt?: string }>();
-  try {
-    const profileId = await ensureProfileForUser(user.id);
-    const live = await listPosts(profileId, 500);
-    liveById = new Map(
-      live.map((p) => [p.id, { status: p.status, publishedAt: p.publishedAt }])
-    );
-  } catch (err) {
-    console.error("activity status sync:", err);
-  }
-
-  const posts = records.map((r) => {
-    const live = liveById.get(r.id);
-    return live ? { ...r, status: live.status, publishedAt: live.publishedAt } : r;
-  });
-
-  return NextResponse.json({ posts });
+  return NextResponse.json({ posts: await listPostsForUser(user.id) });
 }
 
 // POST /api/social/posts { caption, socialAccountIds, mediaUrls?, scheduledAt?, contentType? }
@@ -153,9 +128,7 @@ export async function POST(req: NextRequest) {
       contentType,
     };
 
-    const result = isPostizEnabled
-      ? await createPostWithPostiz(postParams)
-      : await createPost(postParams);
+    const result = await createPostWithPostiz(postParams);
 
     await recordPost({
       id: result.id,
