@@ -11,6 +11,7 @@ import { listPostsForUser, recordPost } from "@/lib/store";
 import { checkPostLimit } from "@/lib/plan-usage";
 import { autoCropForInstagram, needsInstagramCrop, type ContentType } from "@/lib/image-utils";
 import { createPostWithPostiz, isPostizEnabled } from "@/lib/postiz";
+import { listMetaAccounts, publishMetaPost } from "@/lib/meta";
 
 // GET /api/social/posts — this user's post history from our own backend.
 // Statuses are overlaid with live Zernio state so activity always reflects
@@ -79,6 +80,13 @@ export async function POST(req: NextRequest) {
         },
         { status: 403 }
       );
+    }
+
+    if (body.socialAccountIds.some((id) => id.startsWith("meta:"))) {
+      const results = await publishMetaPost(user.id, { accountIds: body.socialAccountIds, content: body.caption, mediaUrls: body.mediaUrls, scheduledAt: body.scheduledAt });
+      const result = results[0] ?? { id: "", status: body.scheduledAt ? "scheduled" : "published" };
+      await recordPost({ id: result.id, userId: user.id, caption: body.caption, socialAccountIds: body.socialAccountIds, status: result.status, createdAt: new Date().toISOString() });
+      return NextResponse.json(result);
     }
 
     const profileId = await ensureProfileForUser(user.id);

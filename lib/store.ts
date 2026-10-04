@@ -26,7 +26,31 @@ const sessions = () => db().collection("sessions");
 const posts = () => db().collection("posts");
 const events = () => db().collection("connectedAccountEvents");
 const profiles = () => db().collection("profiles");
+const socialAccounts = () => db().collection("socialAccounts");
 const payments = () => db().collection("payments");
+
+export interface StoredSocialAccount {
+  id: string;
+  platform: string;
+  username?: string;
+  display_name?: string;
+  accessToken: string;
+  externalId: string;
+  pageId?: string;
+}
+
+export async function saveSocialAccount(userId: string, account: StoredSocialAccount) {
+  await socialAccounts().doc(`${userId}:${account.id}`).set({ ...account, userId });
+}
+
+export async function getSocialAccountsForUser(userId: string): Promise<StoredSocialAccount[]> {
+  const snap = await socialAccounts().where("userId", "==", userId).get();
+  return snap.docs.map((doc) => doc.data() as StoredSocialAccount);
+}
+
+export async function removeSocialAccount(userId: string, accountId: string) {
+  await socialAccounts().doc(`${userId}:${accountId}`).delete();
+}
 
 interface UserRecord {
   id: string;
